@@ -16,4 +16,7 @@ private:
 
 public:
     int m_nLogLevel = 2;  // info
+
+    // 壹钱包token
+    QString m_yqbToken;
 };

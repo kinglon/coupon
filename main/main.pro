@@ -15,11 +15,13 @@ SOURCES += \
     Utility/ImPath.cpp \
     Utility/LogBuffer.cpp \
     Utility/LogUtil.cpp \
+    datamodel.cpp \
     httpclientbase.cpp \
     main.cpp \
     mainwindow.cpp \
     settingmanager.cpp \
-    uiutil.cpp
+    uiutil.cpp \
+    yqbhttpclient.cpp
 
 HEADERS += \
     Utility/DumpUtil.h \
@@ -29,10 +31,12 @@ HEADERS += \
     Utility/LogBuffer.h \
     Utility/LogMacro.h \
     Utility/LogUtil.h \
+    datamodel.h \
     httpclientbase.h \
     mainwindow.h \
     settingmanager.h \
-    uiutil.h
+    uiutil.h \
+    yqbhttpclient.h
 
 FORMS += \
     mainwindow.ui
