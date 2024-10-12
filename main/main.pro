@@ -19,6 +19,7 @@ SOURCES += \
     httpclientbase.cpp \
     main.cpp \
     mainwindow.cpp \
+    mfhttpclient.cpp \
     settingmanager.cpp \
     uiutil.cpp \
     yqbhttpclient.cpp
@@ -34,6 +35,7 @@ HEADERS += \
     datamodel.h \
     httpclientbase.h \
     mainwindow.h \
+    mfhttpclient.h \
     settingmanager.h \
     uiutil.h \
     yqbhttpclient.h

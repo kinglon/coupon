@@ -24,6 +24,7 @@ public:
     QDateTime m_queryDateTime;
 };
 
+// 壹钱包充值
 class YqbHttpClient : public HttpClientBase
 {
     Q_OBJECT
