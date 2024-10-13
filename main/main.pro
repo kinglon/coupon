@@ -22,6 +22,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     mfhttpclient.cpp \
+    multichargecontroller.cpp \
     settingdialog.cpp \
     settingmanager.cpp \
     uiutil.cpp \
@@ -41,6 +42,7 @@ HEADERS += \
     httpclientbase.h \
     mainwindow.h \
     mfhttpclient.h \
+    multichargecontroller.h \
     settingdialog.h \
     settingmanager.h \
     uiutil.h \

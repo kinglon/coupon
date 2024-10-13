@@ -3,7 +3,9 @@
 #include "settingdialog.h"
 #include "chargephonedialog.h"
 #include "chargedialog.h"
+#include "uiutil.h"
 #include <QMenu>
+#include <QDateTime>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -58,8 +60,9 @@ void MainWindow::initCtrls()
     });
 
     connect(ui->importChargeButton, &QPushButton::clicked, []() {
-        ChargeDialog dlg;
-        dlg.show();
+        ChargeDialog* dlg = new ChargeDialog();
+        dlg->setAttribute(Qt::WA_DeleteOnClose);
+        dlg->show();
     });
 }
 
@@ -126,19 +129,120 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
     return QMainWindow::eventFilter(obj, event);
 }
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (m_multiChargeController)
+    {
+        UiUtil::showTip(QString::fromWCharArray(L"请先取消求购"));
+        event->ignore();
+        return;
+    }
+
+    event->accept();
+}
+
 void MainWindow::onCtrlDShortcut()
 {
 
 }
 
+void MainWindow::onPrintLog(QString content)
+{
+    static int lineCount = 0;
+    if (lineCount >= 1000)
+    {
+        ui->logEdit->clear();
+        lineCount = 0;
+    }
+    lineCount++;
+
+    qInfo(content.toStdString().c_str());
+    QDateTime currentDateTime = QDateTime::currentDateTime();
+    QString currentTimeString = currentDateTime.toString("[MM-dd hh:mm:ss] ");
+    QString line = currentTimeString + content;
+    ui->logEdit->append(line);
+}
+
 void MainWindow::onStartBuyButtonClicked()
 {
-    // todo by yejinlong
+    QLineEdit* edits[] = {ui->fv5CountEdit, ui->fv10CountEdit, ui->fv50CountEdit, ui->fv100CountEdit,
+                         ui->fv200CountEdit, ui->fv500CountEdit, ui->fv1000CountEdit};
+    QVector<int> wantBuyCounts;
+    for (int i=0; i<sizeof(edits)/sizeof(edits[0]); i++)
+    {
+        if (edits[i]->text().isEmpty())
+        {
+            wantBuyCounts.append(0);
+        }
+        else
+        {
+            bool ok = false;
+            int count = edits[i]->text().toInt(&ok);
+            if (!ok || count < 0)
+            {
+                UiUtil::showTip(QString::fromWCharArray(L"请填写正确的求购面额数量"));
+                return;
+            }
+            wantBuyCounts.append(count);
+        }
+    }
+
+    // 校验是否有设置数量
+    bool ok = false;
+    for (auto& wantBuyCount : wantBuyCounts)
+    {
+        if (wantBuyCount > 0)
+        {
+            ok = true;
+            break;
+        }
+    }
+    if (!ok)
+    {
+        UiUtil::showTip(QString::fromWCharArray(L"请填写求购面额数量"));
+        return;
+    }
+
+    SettingManager::getInstance()->m_wantBuyCounts = wantBuyCounts;
+    SettingManager::getInstance()->save();
+
+    if (SettingManager::getInstance()->m_chargePhones.isEmpty())
+    {
+        UiUtil::showTip(QString::fromWCharArray(L"请添加充值手机"));
+        return;
+    }
+
+    ui->startBuyButton->setEnabled(false);
+    ui->cancelBuyButton->setEnabled(true);
+    ui->addPhoneButton->setEnabled(false);
+
+    m_multiChargeController = new MultiChargeController();
+    connect(m_multiChargeController, &MultiChargeController::printLog, this, &MainWindow::onPrintLog);
+    connect(m_multiChargeController, &MultiChargeController::runFinish, [this](bool success) {
+        if (success)
+        {
+            onPrintLog(QString::fromWCharArray(L"求购充值成功"));
+        }
+        else
+        {
+            onPrintLog(QString::fromWCharArray(L"求购充值失败"));
+        }
+        ui->startBuyButton->setEnabled(true);
+        ui->cancelBuyButton->setEnabled(false);
+        ui->addPhoneButton->setEnabled(true);
+        m_multiChargeController->deleteLater();
+        m_multiChargeController = nullptr;
+    });
+    m_multiChargeController->run();
 }
 
 void MainWindow::onCancelBuyButtonClicked()
 {
-    // todo by yejinlong
+    if (m_multiChargeController)
+    {
+        m_multiChargeController->requestStop();
+        ui->cancelBuyButton->setEnabled(false);
+    }
 }
 
 void MainWindow::onAddPhoneButtonClicked()

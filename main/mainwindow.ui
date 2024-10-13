@@ -35,6 +35,9 @@
        </item>
        <item>
         <widget class="QPushButton" name="cancelBuyButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>取消求购</string>
          </property>
@@ -190,7 +193,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPlainTextEdit" name="logEdit"/>
+      <widget class="QTextEdit" name="logEdit"/>
      </item>
     </layout>
    </widget>

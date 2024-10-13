@@ -3,7 +3,9 @@
 
 #include <QMainWindow>
 #include <QShortcut>
+#include <QCloseEvent>
 #include <QStandardItemModel>
+#include "multichargecontroller.h"
 #include "settingmanager.h"
 
 QT_BEGIN_NAMESPACE
@@ -21,6 +23,8 @@ public:
 private slots:
     void onCtrlDShortcut();
 
+    void onPrintLog(QString content);
+
     void onStartBuyButtonClicked();
 
     void onCancelBuyButtonClicked();
@@ -33,6 +37,8 @@ private slots:
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
+
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     void initCtrls();
@@ -47,5 +53,7 @@ private:
 
     // 充值手机表格的模型
     QStandardItemModel m_phoneModel;
+
+    MultiChargeController* m_multiChargeController = nullptr;
 };
 #endif // MAINWINDOW_H
