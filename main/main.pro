@@ -15,11 +15,14 @@ SOURCES += \
     Utility/ImPath.cpp \
     Utility/LogBuffer.cpp \
     Utility/LogUtil.cpp \
+    chargedialog.cpp \
+    chargephonedialog.cpp \
     datamodel.cpp \
     httpclientbase.cpp \
     main.cpp \
     mainwindow.cpp \
     mfhttpclient.cpp \
+    settingdialog.cpp \
     settingmanager.cpp \
     uiutil.cpp \
     yqbhttpclient.cpp
@@ -32,13 +35,19 @@ HEADERS += \
     Utility/LogBuffer.h \
     Utility/LogMacro.h \
     Utility/LogUtil.h \
+    chargedialog.h \
+    chargephonedialog.h \
     datamodel.h \
     httpclientbase.h \
     mainwindow.h \
     mfhttpclient.h \
+    settingdialog.h \
     settingmanager.h \
     uiutil.h \
     yqbhttpclient.h
 
 FORMS += \
-    mainwindow.ui
+    chargedialog.ui \
+    chargephonedialog.ui \
+    mainwindow.ui \
+    settingdialog.ui

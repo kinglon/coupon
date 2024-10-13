@@ -9,7 +9,7 @@
 
 SettingManager::SettingManager()
 {
-    Load();
+    load();
 }
 
 SettingManager* SettingManager::getInstance()
@@ -18,7 +18,7 @@ SettingManager* SettingManager::getInstance()
 	return pInstance;
 }
 
-void SettingManager::Load()
+void SettingManager::load()
 {
     std::wstring strConfFilePath = CImPath::GetConfPath() + L"configs.json";    
     QFile file(QString::fromStdWString(strConfFilePath));
@@ -33,4 +33,38 @@ void SettingManager::Load()
     QJsonDocument jsonDocument = QJsonDocument::fromJson(jsonData);
     QJsonObject root = jsonDocument.object();
     m_nLogLevel = root["log_level"].toInt();
+}
+
+void SettingManager::save()
+{
+    // todo by yejinlong
+}
+
+void SettingManager::updateChargePhone(const ChargePhone& chargePhone)
+{
+    for (auto& phone : m_chargePhones)
+    {
+        if (phone.m_id == chargePhone.m_id)
+        {
+            phone = chargePhone;
+            save();
+            return;
+        }
+    }
+
+    m_chargePhones.append(chargePhone);
+    save();
+}
+
+void SettingManager::deleteChargePhone(QString id)
+{
+    for (int i=0; i<m_chargePhones.size(); i++)
+    {
+        if (m_chargePhones[i].m_id == id)
+        {
+            m_chargePhones.remove(i);
+            break;
+        }
+    }
+    save();
 }
