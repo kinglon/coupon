@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <QVector>
+#include "datamodel.h"
 
 // 充值手机
 class ChargePhone
@@ -54,4 +55,7 @@ public:
 
     // 充值手机列表
     QVector<ChargePhone> m_chargePhones;
+
+    // 导入的卡券列表
+    QVector<Coupon> m_coupons;
 };

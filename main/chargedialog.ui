@@ -6,19 +6,19 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>886</width>
+    <width>730</width>
     <height>481</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>导入卡券充值</string>
   </property>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>867</width>
+     <width>711</width>
      <height>461</height>
     </rect>
    </property>
@@ -49,7 +49,14 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="chargeMoneyEdit"/>
+       <widget class="QLineEdit" name="chargeMoneyEdit">
+        <property name="maximumSize">
+         <size>
+          <width>60</width>
+          <height>16777215</height>
+         </size>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QPushButton" name="startQueryButton">
@@ -79,31 +86,35 @@
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QRadioButton" name="delSelectionButton">
-        <property name="text">
-         <string>勾选</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="delInvalidButton">
-        <property name="text">
-         <string>无效</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="delBoundButton">
-        <property name="text">
-         <string>已绑定</string>
-        </property>
-       </widget>
-      </item>
      </layout>
     </item>
     <item>
-     <widget class="QListWidget" name="couponListWidget"/>
+     <widget class="QTableView" name="couponTableView">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>280</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>280</height>
+       </size>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::NoSelection</enum>
+      </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTextEdit" name="logEdit"/>
     </item>
    </layout>
   </widget>

@@ -10,10 +10,17 @@ void UiUtil::showTip(QString tip)
     msgBox.exec();
 }
 
-void UiUtil::showImage(const QPixmap& image, QLabel& labelCtrl)
+bool UiUtil::showTipV2(QString tip)
 {
-    QSize size = labelCtrl.size();
-    QPixmap pixmap = image.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    labelCtrl.setPixmap(pixmap);
-    labelCtrl.setAlignment(Qt::AlignCenter);
+    QMessageBox msgBox;
+    msgBox.setWindowTitle(QString::fromWCharArray(L"提示"));
+    msgBox.setText(tip);
+    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    int result = msgBox.exec();
+    if (result == QMessageBox::Ok)
+    {
+        return true;
+    }
+
+    return false;
 }

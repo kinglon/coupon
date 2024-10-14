@@ -32,7 +32,7 @@ public:
     explicit YqbHttpClient(QObject *parent = nullptr);
 
 public:
-    void charge(QString mobile, const Coupon& coupon);
+    void charge(QString mobile, const Coupon& coupon, bool onlyQueryCoupon);
 
 signals:
     // success=true 成功访问壹钱包，result充值结果
@@ -64,6 +64,9 @@ private:
     ChargeResult m_result;
 
     int m_retryCount = 0;
+
+    // true 只是查询卡券信息，false是查询卡券信息并充值
+    bool m_onlyQueryCoupon = false;
 
     // 校验卡券请求返回的data数据
     QJsonObject m_verifyCouponResponseData;

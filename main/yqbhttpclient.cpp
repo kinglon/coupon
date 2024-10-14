@@ -19,8 +19,10 @@ YqbHttpClient::YqbHttpClient(QObject *parent)
 
 }
 
-void YqbHttpClient::charge(QString mobile, const Coupon& coupon)
+void YqbHttpClient::charge(QString mobile, const Coupon& coupon, bool onlyQueryCoupon)
 {
+    m_onlyQueryCoupon = onlyQueryCoupon;
+    m_retryCount = 0;
     m_mobile = mobile;
     m_result.m_coupon = coupon;
     m_result.m_queryDateTime = QDateTime::currentDateTime();
@@ -150,9 +152,19 @@ void YqbHttpClient::processVerifyCouponResponse(QNetworkReply *reply)
     if (resultCode == "1000")
     {
         m_verifyCouponResponseData = root["data"].toObject();
-        m_retryCount = 0;
-        sendRechargeRequest();
-        return;
+        if (m_onlyQueryCoupon)
+        {
+            m_result.m_coupon.m_faceValue = m_verifyCouponResponseData["point"].toInt() / 500;
+            m_result.m_coupon.m_expiredDate = m_verifyCouponResponseData["expiredDate"].toString();
+            emit chargeCompletely(true, "", m_result);
+            return;
+        }
+        else
+        {
+            m_retryCount = 0;
+            sendRechargeRequest();
+            return;
+        }
     }
     else
     {

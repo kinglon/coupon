@@ -16,9 +16,15 @@ public:
     // 面值
     int m_faceValue = 0;
 
+    // 有效期
+    QString m_expiredDate;
+
+    // 状态：使用中、未激活、卡密错误
+    QString m_status;
+
     bool isValid()
     {
-        if (m_couponId.isEmpty() || m_couponPassword.isEmpty() || m_faceValue <= 0)
+        if (m_couponId.isEmpty() || m_couponPassword.isEmpty())
         {
             return false;
         }

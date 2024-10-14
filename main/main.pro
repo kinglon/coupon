@@ -17,6 +17,7 @@ SOURCES += \
     Utility/LogUtil.cpp \
     chargedialog.cpp \
     chargephonedialog.cpp \
+    couponquerier.cpp \
     datamodel.cpp \
     httpclientbase.cpp \
     main.cpp \
@@ -25,6 +26,7 @@ SOURCES += \
     multichargecontroller.cpp \
     settingdialog.cpp \
     settingmanager.cpp \
+    singlechargecontroller.cpp \
     uiutil.cpp \
     yqbhttpclient.cpp
 
@@ -38,6 +40,7 @@ HEADERS += \
     Utility/LogUtil.h \
     chargedialog.h \
     chargephonedialog.h \
+    couponquerier.h \
     datamodel.h \
     httpclientbase.h \
     mainwindow.h \
@@ -45,6 +48,7 @@ HEADERS += \
     multichargecontroller.h \
     settingdialog.h \
     settingmanager.h \
+    singlechargecontroller.h \
     uiutil.h \
     yqbhttpclient.h
 
@@ -53,3 +57,15 @@ FORMS += \
     chargephonedialog.ui \
     mainwindow.ui \
     settingdialog.ui
+
+# Enable PDB generation
+QMAKE_CFLAGS_RELEASE += /Zi
+QMAKE_CXXFLAGS_RELEASE += /Zi
+QMAKE_LFLAGS_RELEASE += /DEBUG
+
+# Enable log context
+DEFINES += QT_MESSAGELOGCONTEXT
+
+# QXlsx code for Application Qt project
+include(../QXlsx/QXlsx.pri)
+INCLUDEPATH += ../QXlsx/header/
