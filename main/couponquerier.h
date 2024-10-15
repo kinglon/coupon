@@ -24,11 +24,17 @@ signals:
     void runFinish(bool success);
 
 private:
+    void doQuery();
+
+private:
     // 用于查询请求时的手机号
     QString m_mobile;
 
     // 待查询卡券列表
     QVector<Coupon> m_coupons;
+
+    // 当前查询的卡券索引
+    int m_currentQueryCouponIndex = 0;
 };
 
 #endif // COUPONQUERIER_H
