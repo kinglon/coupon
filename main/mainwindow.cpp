@@ -206,9 +206,9 @@ void MainWindow::onStartBuyButtonClicked()
     SettingManager::getInstance()->m_wantBuyCounts = wantBuyCounts;
     SettingManager::getInstance()->save();
 
-    if (SettingManager::getInstance()->m_chargePhones.isEmpty())
+    if (SettingManager::getInstance()->getTotalChargeMoney() == 0)
     {
-        UiUtil::showTip(QString::fromWCharArray(L"请添加充值手机"));
+        UiUtil::showTip(QString::fromWCharArray(L"请添加充值手机和充值金额"));
         return;
     }
 

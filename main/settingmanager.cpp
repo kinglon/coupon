@@ -68,3 +68,13 @@ void SettingManager::deleteChargePhone(QString id)
     }
     save();
 }
+
+int SettingManager::getTotalChargeMoney()
+{
+    int total = 0;
+    for (int i=0; i<m_chargePhones.size(); i++)
+    {
+        total += m_chargePhones[i].m_moneyCount;
+    }
+    return total;
+}

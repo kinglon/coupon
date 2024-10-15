@@ -14,7 +14,7 @@ public:
     // 手机号
     QString m_phoneNumber;
 
-    // 金额
+    // 要充的总金额
     int m_moneyCount = 0;
 
     // 已充金额
@@ -40,6 +40,9 @@ public:
     void updateChargePhone(const ChargePhone& chargePhone);
 
     void deleteChargePhone(QString id);
+
+    // 获取所有手机充值金额总和
+    int getTotalChargeMoney();
 
 private:
     void load();
