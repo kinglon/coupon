@@ -231,6 +231,17 @@ void ChargeDialog::onStartBindButtonClicked()
     ui->startBindButton->setEnabled(false);
     m_chargeController = new SingleChargeController();
     connect(m_chargeController, &SingleChargeController::printLog, this, &ChargeDialog::onPrintLog);
+    connect(m_chargeController, &SingleChargeController::couponStatusChange, [this](QString couponPassword, QString status) {
+        for (auto& coupon : SettingManager::getInstance()->m_coupons)
+        {
+            if (coupon.m_couponPassword == couponPassword)
+            {
+                coupon.m_status = status;
+                break;
+            }
+        }
+        initCouponTableView();
+    });
     connect(m_chargeController, &SingleChargeController::runFinish, [this](bool) {
         ui->startQueryButton->setEnabled(true);
         ui->startBindButton->setEnabled(true);

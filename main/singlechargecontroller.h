@@ -16,7 +16,25 @@ public:
 signals:
     void printLog(QString content);
 
+    void couponStatusChange(QString couponPassword, QString status);
+
     void runFinish(bool success);
+
+private:
+    void doCharge();
+
+private:
+    QString m_mobile;
+
+    int m_chargeMoney = 0;
+
+    QVector<Coupon> m_coupons;
+
+    // 当前正在充值的卡券索引
+    int m_currentChargeCouponIndex = 0;
+
+    // 累计已充的金额
+    int m_sumChargeMoney = 0;
 };
 
 #endif // SINGLECHARGECONTROLLER_H
