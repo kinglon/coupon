@@ -27,6 +27,19 @@ public:
     QString m_remark;
 };
 
+class BuyCouponSetting
+{
+public:
+    // 面额
+    int m_faceVal = 0;
+
+    // 要购买的数量
+    int m_willBuyCount = 0;
+
+    // 折扣
+    int m_discount = 950;
+};
+
 class SettingManager
 {
 protected:
@@ -53,12 +66,15 @@ public:
     // 壹钱包token
     QString m_yqbToken;
 
-    // 每个面额求购的数量，对应50-1000面额
-    QVector<int> m_wantBuyCounts;
+    // 求购设置
+    QVector<BuyCouponSetting> m_buyCouponSetting;
 
     // 充值手机列表
     QVector<ChargePhone> m_chargePhones;
 
     // 导入的卡券列表
     QVector<Coupon> m_coupons;
+
+    // 查询卡券库存间隔，单位毫秒
+    int m_mfQueryStockInterval = 5000;
 };

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>861</width>
+    <width>859</width>
     <height>522</height>
    </rect>
   </property>
@@ -79,7 +79,30 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="fv5CountEdit"/>
+        <widget class="QLineEdit" name="fv5CountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="fv5DiscountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>950</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QLabel" name="label_2">
@@ -92,7 +115,30 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="fv10CountEdit"/>
+        <widget class="QLineEdit" name="fv10CountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="fv10DiscountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>950</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QLabel" name="label_3">
@@ -105,7 +151,30 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="fv50CountEdit"/>
+        <widget class="QLineEdit" name="fv50CountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="fv50DiscountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>950</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QLabel" name="label_4">
@@ -118,7 +187,30 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="fv100CountEdit"/>
+        <widget class="QLineEdit" name="fv100CountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="fv100DiscountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>950</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QLabel" name="label_5">
@@ -131,7 +223,30 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="fv200CountEdit"/>
+        <widget class="QLineEdit" name="fv200CountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="fv200DiscountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>950</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QLabel" name="label_6">
@@ -144,7 +259,30 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="fv500CountEdit"/>
+        <widget class="QLineEdit" name="fv500CountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="fv500DiscountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>950</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QLabel" name="label_7">
@@ -157,7 +295,30 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="fv1000CountEdit"/>
+        <widget class="QLineEdit" name="fv1000CountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="fv1000DiscountEdit">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>950</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

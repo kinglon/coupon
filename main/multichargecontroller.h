@@ -37,7 +37,7 @@ private:
     SingleChargeController* m_chargeController = nullptr;
 
     // 购买卡券列表
-    QVector<Coupon> m_coupons;
+    QVector<GetCouponResult> m_coupons;
 };
 
 #endif // MULTICHARGECONTROLLER_H

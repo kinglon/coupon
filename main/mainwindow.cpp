@@ -30,12 +30,15 @@ MainWindow::~MainWindow()
 void MainWindow::initCtrls()
 {
     // 初始化求购面额数量
-    QLineEdit* edits[] = {ui->fv5CountEdit, ui->fv10CountEdit, ui->fv50CountEdit, ui->fv100CountEdit,
+    QLineEdit* fvCountEdits[] = {ui->fv5CountEdit, ui->fv10CountEdit, ui->fv50CountEdit, ui->fv100CountEdit,
                          ui->fv200CountEdit, ui->fv500CountEdit, ui->fv1000CountEdit};
-    QVector<int> wantBuyCounts = SettingManager::getInstance()->m_wantBuyCounts;
-    for (int i=0; i<sizeof(edits)/sizeof(edits[0]) && i<wantBuyCounts.size(); i++)
+    QLineEdit* fvDisountEdits[] = {ui->fv5DiscountEdit, ui->fv10DiscountEdit, ui->fv50DiscountEdit, ui->fv100DiscountEdit,
+                         ui->fv200DiscountEdit, ui->fv500DiscountEdit, ui->fv1000DiscountEdit};
+    const QVector<BuyCouponSetting>& buyCouponSettings = SettingManager::getInstance()->m_buyCouponSetting;
+    for (int i=0; i<buyCouponSettings.size(); i++)
     {
-        edits[i]->setText(QString::number(wantBuyCounts[i]));
+        fvCountEdits[i]->setText(QString::number(buyCouponSettings[i].m_willBuyCount));
+        fvDisountEdits[i]->setText(QString::number(buyCouponSettings[i].m_discount));
     }
 
     // 初始化充值手机列表
@@ -165,33 +168,57 @@ void MainWindow::onPrintLog(QString content)
 
 void MainWindow::onStartBuyButtonClicked()
 {
-    QLineEdit* edits[] = {ui->fv5CountEdit, ui->fv10CountEdit, ui->fv50CountEdit, ui->fv100CountEdit,
+    int faceValues[] = {5, 10, 50, 100, 200, 500, 1000};
+    QLineEdit* fvCountEdits[] = {ui->fv5CountEdit, ui->fv10CountEdit, ui->fv50CountEdit, ui->fv100CountEdit,
                          ui->fv200CountEdit, ui->fv500CountEdit, ui->fv1000CountEdit};
-    QVector<int> wantBuyCounts;
-    for (int i=0; i<sizeof(edits)/sizeof(edits[0]); i++)
+    QLineEdit* fvDisountEdits[] = {ui->fv5DiscountEdit, ui->fv10DiscountEdit, ui->fv50DiscountEdit, ui->fv100DiscountEdit,
+                         ui->fv200DiscountEdit, ui->fv500DiscountEdit, ui->fv1000DiscountEdit};
+    QVector<BuyCouponSetting> buyCouponSettings;
+    for (int i=0; i<sizeof(faceValues)/sizeof(faceValues[0]); i++)
     {
-        if (edits[i]->text().isEmpty())
+        BuyCouponSetting setting;
+        setting.m_faceVal = faceValues[i];
+        if (fvCountEdits[i]->text().isEmpty())
         {
-            wantBuyCounts.append(0);
+            UiUtil::showTip(QString::fromWCharArray(L"请填写正确的求购面额数量"));
+            return;
         }
         else
         {
             bool ok = false;
-            int count = edits[i]->text().toInt(&ok);
+            int count = fvCountEdits[i]->text().toInt(&ok);
             if (!ok || count < 0)
             {
                 UiUtil::showTip(QString::fromWCharArray(L"请填写正确的求购面额数量"));
                 return;
             }
-            wantBuyCounts.append(count);
+            setting.m_willBuyCount = count;
         }
+
+        if (fvDisountEdits[i]->text().isEmpty())
+        {
+            UiUtil::showTip(QString::fromWCharArray(L"请填写正确的折扣"));
+            return;
+        }
+        else
+        {
+            bool ok = false;
+            int discount = fvDisountEdits[i]->text().toInt(&ok);
+            if (!ok || discount < 100 || discount > 1000)
+            {
+                UiUtil::showTip(QString::fromWCharArray(L"请填写正确的折扣"));
+                return;
+            }
+            setting.m_discount = discount;
+        }
+        buyCouponSettings.append(setting);
     }
 
     // 校验是否有设置数量
     bool ok = false;
-    for (auto& wantBuyCount : wantBuyCounts)
+    for (auto& buyCouponSetting : buyCouponSettings)
     {
-        if (wantBuyCount > 0)
+        if (buyCouponSetting.m_willBuyCount > 0)
         {
             ok = true;
             break;
@@ -203,7 +230,7 @@ void MainWindow::onStartBuyButtonClicked()
         return;
     }
 
-    SettingManager::getInstance()->m_wantBuyCounts = wantBuyCounts;
+    SettingManager::getInstance()->m_buyCouponSetting = buyCouponSettings;
     SettingManager::getInstance()->save();
 
     if (SettingManager::getInstance()->getTotalChargeMoney() == 0)

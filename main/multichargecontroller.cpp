@@ -11,20 +11,16 @@ void MultiChargeController::run()
 {
     m_couponBuyer = new CouponBuyer();
     connect(m_couponBuyer, &CouponBuyer::printLog, this, &MultiChargeController::printLog);
-    connect(m_couponBuyer, &CouponBuyer::haveNewCoupon, [this](QVector<Coupon> coupons) {
+    connect(m_couponBuyer, &CouponBuyer::haveNewCoupon, [this](QVector<GetCouponResult> coupons) {
         m_coupons.append(coupons);
         doCharge();
     });
-    connect(m_couponBuyer, &CouponBuyer::runFinish, [this](bool success) {
+    connect(m_couponBuyer, &CouponBuyer::runFinish, [this]() {
         m_couponBuyer->deleteLater();
         m_couponBuyer = nullptr;
-
-        if (!success)
-        {
-            requestStop();
-        }        
+        requestStop();
     });
-    m_couponBuyer->run(SettingManager::getInstance()->getTotalChargeMoney());
+    m_couponBuyer->run();
 }
 
 void MultiChargeController::doCharge()
@@ -46,8 +42,8 @@ void MultiChargeController::doCharge()
     });
 
     // 卡券按面额从小到大排序
-    std::sort(m_coupons.begin(), m_coupons.end(), [](Coupon& a, Coupon& b) {
-        return a.m_faceValue < b.m_faceValue;
+    std::sort(m_coupons.begin(), m_coupons.end(), [](GetCouponResult& a, GetCouponResult& b) {
+        return a.m_coupon.m_faceValue < b.m_coupon.m_faceValue;
     });
 
     for (auto& chargePhone : chargePhones)
@@ -57,11 +53,11 @@ void MultiChargeController::doCharge()
         int totalCouponMoney = 0;
         for (auto& coupon : m_coupons)
         {
-            if (coupon.m_faceValue <= needChargeMoney)
+            if (coupon.m_coupon.m_faceValue <= needChargeMoney)
             {
-                coupons.append(coupon);
-                needChargeMoney -= coupon.m_faceValue;
-                totalCouponMoney += coupon.m_faceValue;
+                coupons.append(coupon.m_coupon);
+                needChargeMoney -= coupon.m_coupon.m_faceValue;
+                totalCouponMoney += coupon.m_coupon.m_faceValue;
                 continue;
             }
             break;
@@ -82,13 +78,13 @@ void MultiChargeController::doCharge(QString mobile, int chargeMoney, const QVec
     connect(m_chargeController, &SingleChargeController::couponStatusChange, [this, mobile](QString couponPassword, QString status) {
         for (auto it = m_coupons.begin(); it != m_coupons.end(); it++)
         {
-            if (it->m_couponPassword == couponPassword)
+            if (it->m_coupon.m_couponPassword == couponPassword)
             {
                 for (auto& chargePhone : SettingManager::getInstance()->m_chargePhones)
                 {
                     if (chargePhone.m_phoneNumber == mobile)
                     {
-                        chargePhone.m_chargeMoney += it->m_faceValue;
+                        chargePhone.m_chargeMoney += it->m_coupon.m_faceValue;
                         break;
                     }
                 }
