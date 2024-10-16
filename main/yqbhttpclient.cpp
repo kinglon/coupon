@@ -32,7 +32,7 @@ void YqbHttpClient::charge(QString mobile, const Coupon& coupon, bool onlyQueryC
         return;
     }
 
-    if (SettingManager::getInstance()->m_yqbToken.isEmpty())
+    if (SettingManager::getInstance()->m_yqbSetting.m_yqbToken.isEmpty())
     {
         emit chargeCompletely(false, QString::fromWCharArray(L"充值失败：壹钱包未登录"), ChargeResult());
         return;
@@ -44,10 +44,10 @@ void YqbHttpClient::charge(QString mobile, const Coupon& coupon, bool onlyQueryC
 void YqbHttpClient::sendVerifyCouponRequest()
 {
     QNetworkRequest request;
-    QUrl url(QString(YQB_HOST) + URI_VERIFY_COUPON + "?m=" + SettingManager::getInstance()->m_yqbToken);
+    QUrl url(QString(YQB_HOST) + URI_VERIFY_COUPON + "?m=" + SettingManager::getInstance()->m_yqbSetting.m_yqbToken);
     request.setUrl(url);
     addCommonHeader(request);
-    request.setRawHeader("Cookie", (QString("mzone_session_id=") + SettingManager::getInstance()->m_yqbToken).toUtf8());
+    request.setRawHeader("Cookie", (QString("mzone_session_id=") + SettingManager::getInstance()->m_yqbSetting.m_yqbToken).toUtf8());
 
     QJsonObject* body = getVerifyCouponBodyTemplate();
     if (body == nullptr)
@@ -177,10 +177,10 @@ void YqbHttpClient::processVerifyCouponResponse(QNetworkReply *reply)
 void YqbHttpClient::sendRechargeRequest()
 {
     QNetworkRequest request;
-    QUrl url(QString(YQB_HOST) + URI_RECHARGE + "?m=" + SettingManager::getInstance()->m_yqbToken);
+    QUrl url(QString(YQB_HOST) + URI_RECHARGE + "?m=" + SettingManager::getInstance()->m_yqbSetting.m_yqbToken);
     request.setUrl(url);
     addCommonHeader(request);
-    request.setRawHeader("Cookie", (QString("mzone_session_id=") + SettingManager::getInstance()->m_yqbToken).toUtf8());
+    request.setRawHeader("Cookie", (QString("mzone_session_id=") + SettingManager::getInstance()->m_yqbSetting.m_yqbToken).toUtf8());
 
     QJsonObject* body = getRechargeBodyTemplate();
     if (body == nullptr)

@@ -7,6 +7,7 @@
 #include <QStandardItemModel>
 #include "multichargecontroller.h"
 #include "settingmanager.h"
+#include "logincontroller.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -55,5 +56,7 @@ private:
     QStandardItemModel m_phoneModel;
 
     MultiChargeController* m_multiChargeController = nullptr;
+
+    LoginController m_loginController;
 };
 #endif // MAINWINDOW_H

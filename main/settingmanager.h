@@ -40,6 +40,31 @@ public:
     int m_discount = 950;
 };
 
+class YqbSetting
+{
+public:
+    // 壹钱包token
+    QString m_yqbToken;
+
+    // 刷新使用的手机号
+    QString m_mobileNumber;
+
+    // 刷新使用的卡券号码
+    QString m_couponId;
+
+    // 刷新使用的卡券密码
+    QString m_couponPassword;
+
+    bool isValid()
+    {
+        if (!m_yqbToken.isEmpty() && !m_mobileNumber.isEmpty() && !m_couponId.isEmpty() && !m_couponPassword.isEmpty())
+        {
+            return true;
+        }
+        return false;
+    }
+};
+
 class SettingManager
 {
 protected:
@@ -63,8 +88,8 @@ private:
 public:
     int m_nLogLevel = 2;  // info
 
-    // 壹钱包token
-    QString m_yqbToken;
+    // 壹钱包设置
+    YqbSetting m_yqbSetting;
 
     // 求购设置
     QVector<BuyCouponSetting> m_buyCouponSetting;

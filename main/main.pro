@@ -21,6 +21,7 @@ SOURCES += \
     couponquerier.cpp \
     datamodel.cpp \
     httpclientbase.cpp \
+    logincontroller.cpp \
     main.cpp \
     mainwindow.cpp \
     mfhttpclient.cpp \
@@ -45,6 +46,7 @@ HEADERS += \
     couponquerier.h \
     datamodel.h \
     httpclientbase.h \
+    logincontroller.h \
     mainwindow.h \
     mfhttpclient.h \
     multichargecontroller.h \
