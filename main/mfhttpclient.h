@@ -21,11 +21,33 @@ public:
 class GetCouponResult
 {
 public:
+    // 购买返回的record id
+    QString m_recordId;
+
     // 订单号
     QString m_orderId;
 
     // 卡券
     Coupon m_coupon;
+};
+
+class OrderStatus
+{
+public:
+    // 订单购买返回的record id
+    QString m_recordId;
+
+    // 订单ID
+    QString m_orderId;
+
+    // 标志充值是否成功
+    bool m_success = true;
+
+    // 错误信息
+    QString m_error;
+
+    // 错误图片
+    QString m_imageUrl;
 };
 
 // 对接蜜蜂系统
@@ -50,7 +72,7 @@ public:
     void getCoupon(QString recordId);
 
     // 报告错误
-    void reportError(QString recordId, QString orderId, QString error, QString imageUrl);
+    void reportOrderStatus(const OrderStatus& orderStatus);
 
 signals:
     void wantBuyCardCompletely(bool success, QString errorMsg, QString recordId);
@@ -63,7 +85,7 @@ signals:
 
     void getCouponCompletely(bool success, QString errorMsg, QVector<GetCouponResult> result);
 
-    void reportErrorCompletely(bool success, QString errorMsg);
+    void reportOrderStatusCompletely(bool success, QString errorMsg);
 
 protected:
     virtual void onHttpResponse(QNetworkReply *reply) override;

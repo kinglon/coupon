@@ -26,6 +26,7 @@ SOURCES += \
     mainwindow.cpp \
     mfhttpclient.cpp \
     multichargecontroller.cpp \
+    orderstatusreporter.cpp \
     settingdialog.cpp \
     settingmanager.cpp \
     singlechargecontroller.cpp \
@@ -50,6 +51,7 @@ HEADERS += \
     mainwindow.h \
     mfhttpclient.h \
     multichargecontroller.h \
+    orderstatusreporter.h \
     settingdialog.h \
     settingmanager.h \
     singlechargecontroller.h \

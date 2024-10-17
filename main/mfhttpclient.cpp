@@ -184,7 +184,7 @@ void MfHttpClient::getCoupon(QString recordId)
     m_networkAccessManager.post(request, jsonData);
 }
 
-void MfHttpClient::reportError(QString recordId, QString orderId, QString error, QString imageUrl)
+void MfHttpClient::reportOrderStatus(const OrderStatus& orderStatus)
 {
     QNetworkRequest request;
     QUrl url(QString(MF_HOST) + URI_REPORT_ERROR);
@@ -192,11 +192,18 @@ void MfHttpClient::reportError(QString recordId, QString orderId, QString error,
     addCommonHeader(request);
 
     QJsonObject body;
-    body["zx_id"] = recordId;
-    body["order_id"] = orderId;
-    body["deal_type"] = 2;
-    body["remark"] = error;
-    body["voucher"] = imageUrl;
+    body["zx_id"] = orderStatus.m_recordId;
+    body["order_id"] = orderStatus.m_orderId;
+    if (orderStatus.m_success)
+    {
+        body["deal_type"] = 1;
+    }
+    else
+    {
+        body["deal_type"] = 2;
+        body["remark"] = orderStatus.m_error;
+        body["voucher"] = orderStatus.m_imageUrl;
+    }
 
     appendPublicParams(body);
 
@@ -403,7 +410,7 @@ void MfHttpClient::processReportErrorResponse(QNetworkReply *reply)
     if (reply->error() != QNetworkReply::NoError)
     {
         qCritical("failed to send the request of reporting error, error: %d", reply->error());
-        emit reportErrorCompletely(false, QString::fromWCharArray(L"报告错误失败：无法访问蜜蜂系统"));
+        emit reportOrderStatusCompletely(false, QString::fromWCharArray(L"报告错误失败：无法访问蜜蜂系统"));
         return;
     }
 
@@ -411,20 +418,20 @@ void MfHttpClient::processReportErrorResponse(QNetworkReply *reply)
     QJsonDocument jsonDocument = QJsonDocument::fromJson(data);
     if (jsonDocument.isNull() || jsonDocument.isEmpty())
     {
-        emit reportErrorCompletely(false, QString::fromWCharArray(L"报告错误失败：蜜蜂系统返回数据有误"));
+        emit reportOrderStatusCompletely(false, QString::fromWCharArray(L"报告错误失败：蜜蜂系统返回数据有误"));
         return;
     }
 
     QJsonObject root = jsonDocument.object();
     if (root.contains("code") && root["code"].toInt() == 0)
     {
-        emit reportErrorCompletely(true, "");
+        emit reportOrderStatusCompletely(true, "");
         return;
     }
     else
     {
         QString message = root["message"].toString();
-        emit reportErrorCompletely(false, message);
+        emit reportOrderStatusCompletely(false, message);
         return;
     }
 }

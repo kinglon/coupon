@@ -1,5 +1,6 @@
 ﻿#include "multichargecontroller.h"
 #include "settingmanager.h"
+#include "orderstatusreporter.h"
 
 MultiChargeController::MultiChargeController(QObject *parent)
     : QObject{parent}
@@ -75,20 +76,25 @@ void MultiChargeController::doCharge(QString mobile, int chargeMoney, const QVec
 {
     m_chargeController = new SingleChargeController();
     connect(m_chargeController, &SingleChargeController::printLog, this, &MultiChargeController::printLog);
-    connect(m_chargeController, &SingleChargeController::couponStatusChange, [this, mobile](QString couponPassword, QString status) {
+    connect(m_chargeController, &SingleChargeController::chargeCompletely, [this, mobile](ChargeResult result) {
         for (auto it = m_coupons.begin(); it != m_coupons.end(); it++)
         {
-            if (it->m_coupon.m_couponPassword == couponPassword)
+            if (it->m_coupon.m_couponPassword == result.m_coupon.m_couponPassword)
             {
-                for (auto& chargePhone : SettingManager::getInstance()->m_chargePhones)
-                {
-                    if (chargePhone.m_phoneNumber == mobile)
-                    {
-                        chargePhone.m_chargeMoney += it->m_coupon.m_faceValue;
-                        break;
-                    }
-                }
+                // 上报订单状态
+                OrderStatusReporter::getInstance()->reportOrderStatus(it->m_recordId, it->m_orderId, result);
+
                 m_coupons.erase(it);
+                break;
+            }
+        }
+
+        // 更新手机已充金额
+        for (auto& chargePhone : SettingManager::getInstance()->m_chargePhones)
+        {
+            if (chargePhone.m_phoneNumber == mobile)
+            {
+                chargePhone.m_chargeMoney += result.m_realFaceValue;
                 break;
             }
         }

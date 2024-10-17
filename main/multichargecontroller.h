@@ -4,6 +4,7 @@
 #include <QObject>
 #include "couponbuyer.h"
 #include "singlechargecontroller.h"
+#include "orderstatusreporter.h"
 
 // 自动求购充值
 class MultiChargeController : public QObject

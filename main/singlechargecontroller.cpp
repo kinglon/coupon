@@ -25,24 +25,24 @@ void SingleChargeController::run(QString mobile, int chargeMoney, const QVector<
 
 void SingleChargeController::doCharge()
 {
-    YqbHttpClient* yqbClient = new YqbHttpClient();
+    YqbHttpClient* yqbClient = new YqbHttpClient(this);
     connect(yqbClient, &YqbHttpClient::chargeCompletely, [this, yqbClient](bool success, QString errorMsg, ChargeResult result) {
         if (!success)
         {
+            // 无法访问壹钱包
             emit printLog(errorMsg);
             emit runFinish(false);
         }
         else
         {
+            emit chargeCompletely(result);
             if (!result.m_success)
             {
-                emit printLog(result.m_resultMsg);
-                emit runFinish(false);
+                emit printLog(result.m_resultMsg);                
             }
             else
             {
                 // 充值成功
-                emit couponStatusChange(result.m_coupon.m_couponPassword, QString::fromWCharArray(L"已使用"));
                 m_sumChargeMoney += result.m_realFaceValue;
                 QString logContent = QString::fromWCharArray(L"已充值%1").arg(QString::number(m_sumChargeMoney));
                 emit printLog(logContent);
@@ -50,23 +50,21 @@ void SingleChargeController::doCharge()
                 {
                     emit runFinish(true);
                 }
-                else
-                {
-                    m_currentChargeCouponIndex++;
-                    if (m_currentChargeCouponIndex >= m_coupons.size())
-                    {
-                        emit printLog(QString::fromWCharArray(L"卡券已用完"));
-                        emit runFinish(false);
-                    }
-                    else
-                    {
-                        doCharge();
-                    }
-                }
+            }
 
-                yqbClient->deleteLater();
+            m_currentChargeCouponIndex++;
+            if (m_currentChargeCouponIndex >= m_coupons.size())
+            {
+                emit printLog(QString::fromWCharArray(L"卡券已用完"));
+                emit runFinish(false);
+            }
+            else
+            {
+                doCharge();
             }
         }
+
+        yqbClient->deleteLater();
     });
     yqbClient->charge(m_mobile, m_coupons[m_currentChargeCouponIndex], false);
 }

@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include "datamodel.h"
+#include "yqbhttpclient.h"
 
 // 单手机多张卡券充值
 class SingleChargeController : public QObject
@@ -16,7 +17,7 @@ public:
 signals:
     void printLog(QString content);
 
-    void couponStatusChange(QString couponPassword, QString status);
+    void chargeCompletely(ChargeResult result);
 
     void runFinish(bool success);
 

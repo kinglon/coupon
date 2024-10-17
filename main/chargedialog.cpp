@@ -231,12 +231,16 @@ void ChargeDialog::onStartBindButtonClicked()
     ui->startBindButton->setEnabled(false);
     m_chargeController = new SingleChargeController();
     connect(m_chargeController, &SingleChargeController::printLog, this, &ChargeDialog::onPrintLog);
-    connect(m_chargeController, &SingleChargeController::couponStatusChange, [this](QString couponPassword, QString status) {
+    connect(m_chargeController, &SingleChargeController::chargeCompletely, [this](ChargeResult result) {
         for (auto& coupon : SettingManager::getInstance()->m_coupons)
         {
-            if (coupon.m_couponPassword == couponPassword)
+            if (coupon.m_couponPassword == result.m_coupon.m_couponPassword)
             {
-                coupon.m_status = status;
+                coupon.m_status = result.m_resultMsg;
+                if (result.m_success)
+                {
+                    coupon.m_status = QString::fromWCharArray(L"已使用");
+                }
                 break;
             }
         }

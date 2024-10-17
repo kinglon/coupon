@@ -177,6 +177,10 @@ void CouponBuyer::onMainTimer()
                 }
                 else
                 {
+                    for (auto& item : result)
+                    {
+                        item.m_recordId = buyStatusPtr->m_buyRecordId;
+                    }
                     emit haveNewCoupon(result);
                     buyStatusPtr->m_buyRecordId = "";
                     for (auto& buyStatus : m_couponBuyStatus)
