@@ -24,7 +24,7 @@ void CouponQuerier::run(QString mobile, const QVector<Coupon>& coupons)
 
 void CouponQuerier::doQuery()
 {
-    YqbHttpClient* yqbClient = new YqbHttpClient();
+    YqbHttpClient* yqbClient = new YqbHttpClient(this);
     connect(yqbClient, &YqbHttpClient::chargeCompletely, [this, yqbClient](bool success, QString errorMsg, ChargeResult result) {
         if (!success)
         {
@@ -35,28 +35,23 @@ void CouponQuerier::doQuery()
         {
             if (!result.m_success)
             {
-                emit printLog(result.m_resultMsg);
-                emit runFinish(false);
+                result.m_coupon.m_status = result.m_resultMsg;
+            }
+
+            emit oneCouponFinish(result.m_coupon);
+
+            m_currentQueryCouponIndex++;
+            if (m_currentQueryCouponIndex >= m_coupons.size())
+            {
+                emit printLog(QString::fromWCharArray(L"查询结束"));
+                emit runFinish(true);
             }
             else
             {
-                // 查询成功
-                emit oneCouponFinish(result.m_coupon);
-
-                m_currentQueryCouponIndex++;
-                if (m_currentQueryCouponIndex >= m_coupons.size())
-                {
-                    emit printLog(QString::fromWCharArray(L"查询结束"));
-                    emit runFinish(true);
-                }
-                else
-                {
-                    doQuery();
-                }
-
-                yqbClient->deleteLater();
+                doQuery();
             }
         }
+        yqbClient->deleteLater();
     });
     yqbClient->charge(m_mobile, m_coupons[m_currentQueryCouponIndex], true);
 }

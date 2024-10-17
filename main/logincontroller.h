@@ -9,6 +9,9 @@ class LoginController : public QObject
 public:
     explicit LoginController(QObject *parent = nullptr);
 
+signals:
+    void printLog(QString logContent);
+
 private slots:
     void onMainTimer();
 

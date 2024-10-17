@@ -18,7 +18,7 @@ ChargeDialog::ChargeDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-    setWindowFlags(windowFlags() & ~Qt::WindowMaximizeButtonHint);
+    setWindowFlags(windowFlags() & Qt::WindowMinimizeButtonHint);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint, true);
 
     initCtrls();
@@ -136,6 +136,7 @@ void ChargeDialog::onImportCouponButtonClicked()
     }
 
     SettingManager::getInstance()->m_coupons = coupons;
+    SettingManager::getInstance()->save();
     initCouponTableView();
 }
 
@@ -193,6 +194,7 @@ void ChargeDialog::onStartQueryButtonClicked()
                 break;
             }
         }
+        SettingManager::getInstance()->save();
         initCouponTableView();
     });
     connect(m_couponQuerier, &CouponQuerier::runFinish, [this](bool) {
@@ -244,6 +246,7 @@ void ChargeDialog::onStartBindButtonClicked()
                 break;
             }
         }
+        SettingManager::getInstance()->save();
         initCouponTableView();
     });
     connect(m_chargeController, &SingleChargeController::runFinish, [this](bool) {
@@ -265,9 +268,9 @@ void ChargeDialog::onDeleteCouponButtonClicked()
     QVector<Coupon>& coupons = SettingManager::getInstance()->m_coupons;
     for (auto it=coupons.begin(); it != coupons.end();)
     {
-        if (it->m_status.indexOf(QString::fromWCharArray(L"已使用")) >=0
+        if (it->m_status.indexOf(QString::fromWCharArray(L"已被使用")) >=0
                 || it->m_status.indexOf(QString::fromWCharArray(L"未激活")) >=0
-                || it->m_status.indexOf(QString::fromWCharArray(L"卡号卡密错误")) >=0)
+                || it->m_status.indexOf(QString::fromWCharArray(L"流水号错误")) >=0)
         {
             it = coupons.erase(it);
         }
@@ -276,6 +279,7 @@ void ChargeDialog::onDeleteCouponButtonClicked()
             it++;
         }
     }
+    SettingManager::getInstance()->save();
 
     initCouponTableView();
 }

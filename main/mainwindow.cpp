@@ -20,6 +20,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_ctrlDShortcut = new QShortcut(QKeySequence("Ctrl+D"), this);
     connect(m_ctrlDShortcut, &QShortcut::activated, this, &MainWindow::onCtrlDShortcut);
+
+    connect(&m_loginController, &LoginController::printLog, this, &MainWindow::onPrintLog);
 }
 
 MainWindow::~MainWindow()
@@ -248,12 +250,13 @@ void MainWindow::onStartBuyButtonClicked()
     connect(m_multiChargeController, &MultiChargeController::runFinish, [this](bool success) {
         if (success)
         {
-            onPrintLog(QString::fromWCharArray(L"求购充值成功"));
+            onPrintLog(QString::fromWCharArray(L"求购成功"));
         }
         else
         {
-            onPrintLog(QString::fromWCharArray(L"求购充值失败"));
+            onPrintLog(QString::fromWCharArray(L"求购结束"));
         }
+
         ui->startBuyButton->setEnabled(true);
         ui->cancelBuyButton->setEnabled(false);
         ui->addPhoneButton->setEnabled(true);

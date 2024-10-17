@@ -27,12 +27,22 @@ void LoginController::onMainTimer()
     }
 
     YqbHttpClient* yqbClient = new YqbHttpClient(this);
-    connect(yqbClient, &YqbHttpClient::chargeCompletely, [this](bool success, QString errorMsg, ChargeResult result) {
+    connect(yqbClient, &YqbHttpClient::chargeCompletely, [this, yqbClient](bool success, QString errorMsg, ChargeResult result) {
         if (success)
         {
-            qInfo("successful to refresh yqb token");
-            m_lastRefreshTime = GetTickCount64();
+            // 只要不提示重新登录，就认为刷新成功
+            if (result.m_resultMsg.indexOf(QString::fromWCharArray(L"重新登录")) >= 0)
+            {
+                emit printLog(QString::fromWCharArray(L"请重新登录壹钱包"));
+                SettingManager::getInstance()->m_yqbSetting.m_yqbToken = "";
+            }
+            else
+            {
+                qInfo("successful to refresh yqb token");
+                m_lastRefreshTime = GetTickCount64();
+            }
         }
+        yqbClient->deleteLater();
     });
 
     const auto& yqbSetting = SettingManager::getInstance()->m_yqbSetting;

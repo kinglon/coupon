@@ -5,9 +5,10 @@
 HttpClientBase::HttpClientBase(QObject *parent)
     : QObject{parent}
 {
-    m_networkAccessManager.setProxy(QNetworkProxy());
-    m_networkAccessManager.setTransferTimeout(10*1000);
-    connect(&m_networkAccessManager, &QNetworkAccessManager::finished, this, &HttpClientBase::onHttpFinished);
+    m_networkAccessManager = new QNetworkAccessManager(this);
+    m_networkAccessManager->setProxy(QNetworkProxy());
+    m_networkAccessManager->setTransferTimeout(10*1000);
+    connect(m_networkAccessManager, &QNetworkAccessManager::finished, this, &HttpClientBase::onHttpFinished);
 }
 
 void HttpClientBase::onHttpFinished(QNetworkReply *reply)

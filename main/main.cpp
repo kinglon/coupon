@@ -13,6 +13,12 @@ QtMessageHandler originalHandler = nullptr;
 
 void logToFile(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+    // 去除无效的日志
+    if (msg.indexOf("Could not get the INetworkConnection instance") >= 0)
+    {
+        return;
+    }
+
     if (g_dllLog)
     {
         ELogLevel logLevel = ELogLevel::LOG_LEVEL_ERROR;

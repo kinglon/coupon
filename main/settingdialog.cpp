@@ -29,7 +29,7 @@ void SettingDialog::initCtrls()
     ui->yqbCouponIdEdit->setText(yqbSetting.m_couponId);
     ui->yqbCouponPasswordEdit->setText(yqbSetting.m_couponPassword);
 
-    ui->queryStockIntervalEdit->setText(QString::number(SettingManager::getInstance()->m_mfQueryStockInterval));
+    ui->queryStockIntervalEdit->setText(QString::number(SettingManager::getInstance()->m_mfQueryStockInterval/1000));
 
     connect(ui->okButton, &QPushButton::clicked, [this]() {
         onOkButtonClicked();

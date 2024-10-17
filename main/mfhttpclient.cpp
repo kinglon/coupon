@@ -99,7 +99,7 @@ void MfHttpClient::wantBuyCard(QString sku, int faceVal, int buyCount, int disco
 
     QJsonDocument jsonDocument(body);
     QByteArray jsonData = jsonDocument.toJson();
-    m_networkAccessManager.post(request, jsonData);
+    m_networkAccessManager->post(request, jsonData);
 }
 
 void MfHttpClient::cancelBuying(QString recordId)
@@ -124,7 +124,7 @@ void MfHttpClient::cancelBuying(QString recordId)
 
     QJsonDocument jsonDocument(body);
     QByteArray jsonData = jsonDocument.toJson();
-    m_networkAccessManager.post(request, jsonData);
+    m_networkAccessManager->post(request, jsonData);
 }
 
 void MfHttpClient::getFaceValStockList(QString sku)
@@ -140,7 +140,7 @@ void MfHttpClient::getFaceValStockList(QString sku)
 
     QJsonDocument jsonDocument(body);
     QByteArray jsonData = jsonDocument.toJson();
-    m_networkAccessManager.post(request, jsonData);
+    m_networkAccessManager->post(request, jsonData);
 }
 
 void MfHttpClient::buyCard(QString sku, int faceVal, int buyCount, int discount)
@@ -153,6 +153,7 @@ void MfHttpClient::buyCard(QString sku, int faceVal, int buyCount, int discount)
     QJsonObject body;
     body["goods_sku"] = sku;
     body["face_val"] = faceVal;
+    body["callback_url"] = "http://beekeep.mkwen.cn/";
 
     QJsonArray datas;
     QJsonObject data;
@@ -165,7 +166,7 @@ void MfHttpClient::buyCard(QString sku, int faceVal, int buyCount, int discount)
 
     QJsonDocument jsonDocument(body);
     QByteArray jsonData = jsonDocument.toJson();
-    m_networkAccessManager.post(request, jsonData);
+    m_networkAccessManager->post(request, jsonData);
 }
 
 void MfHttpClient::getCoupon(QString recordId)
@@ -181,7 +182,7 @@ void MfHttpClient::getCoupon(QString recordId)
 
     QJsonDocument jsonDocument(body);
     QByteArray jsonData = jsonDocument.toJson();
-    m_networkAccessManager.post(request, jsonData);
+    m_networkAccessManager->post(request, jsonData);
 }
 
 void MfHttpClient::reportOrderStatus(const OrderStatus& orderStatus)
@@ -209,7 +210,7 @@ void MfHttpClient::reportOrderStatus(const OrderStatus& orderStatus)
 
     QJsonDocument jsonDocument(body);
     QByteArray jsonData = jsonDocument.toJson();
-    m_networkAccessManager.post(request, jsonData);
+    m_networkAccessManager->post(request, jsonData);
 }
 
 void MfHttpClient::processWantBuyCardResponse(QNetworkReply *reply)
@@ -305,7 +306,7 @@ void MfHttpClient::processGetFaceValStockListResponse(QNetworkReply *reply)
             {
                 FaceValStock faceValStock;
                 faceValStock.m_faceVal = faceVal;
-                faceValStock.m_discount = stock.toObject()["discount"].toInt();
+                faceValStock.m_discount = (int)(stock.toObject()["discount"].toString().toFloat());
                 faceValStock.m_count = stock.toObject()["stock"].toInt();
                 faceValStocks.append(faceValStock);
             }
@@ -347,7 +348,7 @@ void MfHttpClient::processBuyCardResponse(QNetworkReply *reply)
         QJsonArray recordIds = data["record_ids"].toArray();
         if (recordIds.size() > 0)
         {
-            recordId = recordIds[0].toString();
+            recordId = QString::number(recordIds[0].toInt());
         }
 
         emit buyCardCompletely(true, "", recordId);
@@ -387,11 +388,16 @@ void MfHttpClient::processGetCouponResponse(QNetworkReply *reply)
         {
             GetCouponResult result;
             QJsonObject dataJson = data.toObject();
-            result.m_orderId = dataJson["order_id"].toString();
+            result.m_orderId = QString::number((qint64)dataJson["order_id"].toDouble());
             result.m_coupon.m_faceValue = dataJson["face_val"].toInt();
             result.m_coupon.m_couponId = dataJson["card_no"].toString();
             result.m_coupon.m_couponPassword = dataJson["card_pwd"].toString();
             results.append(result);
+
+            qInfo("buy a coupon, order id is %s, face value is %d, coupon id is %s, coupon password is %s",
+                  result.m_orderId.toStdString().c_str(), result.m_coupon.m_faceValue,
+                  result.m_coupon.m_couponId.toStdString().c_str(),
+                  result.m_coupon.m_couponPassword.toStdString().c_str());
         }
 
         emit getCouponCompletely(true, "", results);

@@ -132,9 +132,9 @@ bool MultiChargeController::isNeedCharge()
 
 void MultiChargeController::requestStop()
 {
-    if (m_couponBuyer == nullptr || m_chargeController == nullptr)
+    if (m_couponBuyer == nullptr && m_chargeController == nullptr)
     {
-        emit runFinish(isNeedCharge());
+        emit runFinish(!isNeedCharge());
         return;
     }
 

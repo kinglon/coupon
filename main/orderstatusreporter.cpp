@@ -41,8 +41,7 @@ void OrderStatusReporter::reportOrderStatus(QString recordId, QString orderId, c
         {
             reportStatus.m_orderStatus.m_error = QString::fromWCharArray(L"卡已被使用/失效");
         }
-        else if (chargeResult.m_resultMsg.indexOf(QString::fromWCharArray(L"卡密错误")) >= 0 ||
-                 chargeResult.m_resultMsg.indexOf(QString::fromWCharArray(L"卡号错误")) >= 0)
+        else if (chargeResult.m_resultMsg.indexOf(QString::fromWCharArray(L"流水号错误")) >= 0)
         {
             reportStatus.m_orderStatus.m_error = QString::fromWCharArray(L"卡号/卡密错误");
         }
@@ -56,25 +55,21 @@ void OrderStatusReporter::reportOrderStatus(QString recordId, QString orderId, c
         }
     }
 
-    QString orderInfo = QString::fromWCharArray(L"卡号：%1，卡密：%2，查询时间：%3，购买面值：%4，实际面值：%5，壹钱包返回结果：%6")
-            .arg(chargeResult.m_coupon.m_couponId, chargeResult.m_coupon.m_couponPassword,
-                 chargeResult.m_queryDateTime.toString("yyyy/MM/dd hh:mm"),
-                 QString::number(chargeResult.m_coupon.m_faceValue),
-                 QString::number(chargeResult.m_realFaceValue),
-                 chargeResult.m_resultMsg);
-    QString imageFileName = orderId + ".jpg";
-    if (!generateImage(imageFileName, orderInfo))
+    if (!chargeResult.m_success)
     {
-        return;
+        QString imageFileName = orderId + ".jpg";
+        if (!generateImage(imageFileName, chargeResult))
+        {
+            return;
+        }
+        reportStatus.m_orderStatus.m_imageUrl = "http://beekeep.mkwen.cn/" + imageFileName;
     }
-
-    reportStatus.m_orderStatus.m_imageUrl = "http://beekeep.mkwen.cn/" + imageFileName;
     m_reportStatus.append(reportStatus);
 }
 
-bool OrderStatusReporter::generateImage(QString fileName, QString content)
+bool OrderStatusReporter::generateImage(QString fileName, const ChargeResult& chargeResult)
 {
-    QImage image(1000, 300, QImage::Format_RGB32);
+    QImage image(1000, 500, QImage::Format_RGB32);
     image.fill(Qt::white); // Fill the image with white color
 
     // Create a QPainter object to draw on the image
@@ -85,7 +80,17 @@ bool OrderStatusReporter::generateImage(QString fileName, QString content)
     painter.setPen(Qt::black);
 
     // Draw the text on the image
-    painter.drawText(QPoint(5, 20), content);
+    QVector<QString> orderInfos;
+    orderInfos.append(QString::fromWCharArray(L"卡号：%1").arg(chargeResult.m_coupon.m_couponId));
+    orderInfos.append(QString::fromWCharArray(L"卡密：%1").arg(chargeResult.m_coupon.m_couponPassword));
+    orderInfos.append(QString::fromWCharArray(L"查询时间: %1").arg(chargeResult.m_queryDateTime.toString("yyyy/MM/dd hh:mm:ss")));
+    orderInfos.append(QString::fromWCharArray(L"购买面值：%1").arg(QString::number(chargeResult.m_coupon.m_faceValue)));
+    orderInfos.append(QString::fromWCharArray(L"实际面值：%1").arg(QString::number(chargeResult.m_realFaceValue)));
+    orderInfos.append(QString::fromWCharArray(L"壹钱包返回结果：%1").arg(chargeResult.m_resultMsg));
+    for (int i=0; i<orderInfos.size(); i++)
+    {
+        painter.drawText(10, 50+40*i, orderInfos[i]);
+    }
 
     // Save the image to a file
     QString savedPath = "C:\\issue\\";
@@ -103,7 +108,7 @@ void OrderStatusReporter::onMainTimer()
 {
     for (auto& reportStatus : m_reportStatus)
     {
-        if (GetTickCount64() - reportStatus.m_lastReportTime >= REPORT_INTERVAL)
+        if (!reportStatus.m_sendingRequest && GetTickCount64() - reportStatus.m_lastReportTime >= REPORT_INTERVAL)
         {
             QString orderId = reportStatus.m_orderStatus.m_orderId;
             MfHttpClient* mfClient = new MfHttpClient(this);
@@ -112,22 +117,27 @@ void OrderStatusReporter::onMainTimer()
                 {
                     qCritical(errorMsg.toStdString().c_str());
                 }
-                else
+
+                for (auto it=m_reportStatus.begin(); it!=m_reportStatus.end(); it++)
                 {
-                    for (auto it=m_reportStatus.begin(); it!=m_reportStatus.end(); it++)
+                    if (it->m_orderStatus.m_orderId == orderId)
                     {
-                        if (it->m_orderStatus.m_orderId == orderId)
+                        it->m_sendingRequest = false;
+                        if (success)
                         {
+                            qInfo("successful to report status of order: %s", orderId.toStdString().c_str());
                             m_reportStatus.erase(it);
-                            break;
                         }
+                        break;
                     }
                 }
+
                 mfClient->deleteLater();
             });
             mfClient->reportOrderStatus(reportStatus.m_orderStatus);
             qInfo("report status of order: %s", reportStatus.m_orderStatus.m_orderId.toStdString().c_str());
             reportStatus.m_lastReportTime = GetTickCount64();
+            reportStatus.m_sendingRequest = true;
         }
     }
 }

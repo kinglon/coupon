@@ -44,23 +44,25 @@ void SingleChargeController::doCharge()
             {
                 // 充值成功
                 m_sumChargeMoney += result.m_realFaceValue;
-                QString logContent = QString::fromWCharArray(L"已充值%1").arg(QString::number(m_sumChargeMoney));
-                emit printLog(logContent);
-                if (m_sumChargeMoney >= m_chargeMoney)
-                {
-                    emit runFinish(true);
-                }
+                QString logContent = QString::fromWCharArray(L"成功充值%1元").arg(QString::number(m_sumChargeMoney));
+                emit printLog(logContent);                
             }
 
-            m_currentChargeCouponIndex++;
-            if (m_currentChargeCouponIndex >= m_coupons.size())
+            if (m_sumChargeMoney >= m_chargeMoney)
             {
-                emit printLog(QString::fromWCharArray(L"卡券已用完"));
-                emit runFinish(false);
+                emit runFinish(true);
             }
             else
             {
-                doCharge();
+                m_currentChargeCouponIndex++;
+                if (m_currentChargeCouponIndex >= m_coupons.size())
+                {
+                    emit runFinish(false);
+                }
+                else
+                {
+                    doCharge();
+                }
             }
         }
 

@@ -195,7 +195,11 @@ int SettingManager::getTotalChargeMoney()
     int total = 0;
     for (int i=0; i<m_chargePhones.size(); i++)
     {
-        total += m_chargePhones[i].m_moneyCount;
+        int needChargeMoney = m_chargePhones[i].m_moneyCount - m_chargePhones[i].m_chargeMoney;
+        if (needChargeMoney > 0)
+        {
+            total += needChargeMoney;
+        }
     }
     return total;
 }

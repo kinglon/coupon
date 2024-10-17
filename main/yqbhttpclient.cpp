@@ -60,7 +60,8 @@ void YqbHttpClient::sendVerifyCouponRequest()
     (*body)["account"] = m_mobile;
     QJsonDocument jsonDocument(*body);
     QByteArray jsonData = jsonDocument.toJson();
-    m_networkAccessManager.post(request, jsonData);
+    m_networkAccessManager->post(request, jsonData);
+    qInfo("send verify coupon request for %s", m_result.m_coupon.m_couponId.toStdString().c_str());
 }
 
 QJsonObject* YqbHttpClient::getVerifyCouponBodyTemplate()
@@ -154,6 +155,7 @@ void YqbHttpClient::processVerifyCouponResponse(QNetworkReply *reply)
         m_verifyCouponResponseData = root["data"].toObject();
         if (m_onlyQueryCoupon)
         {
+            m_result.m_success = true;
             m_result.m_coupon.m_faceValue = m_verifyCouponResponseData["point"].toInt() / 500;
             m_result.m_coupon.m_expiredDate = m_verifyCouponResponseData["expiredDate"].toString();
             emit chargeCompletely(true, "", m_result);
@@ -168,6 +170,7 @@ void YqbHttpClient::processVerifyCouponResponse(QNetworkReply *reply)
     }
     else
     {
+        m_result.m_success = false;
         m_result.m_resultMsg = root["resultMsg"].toString();
         emit chargeCompletely(true, "", m_result);
         return;
@@ -197,7 +200,8 @@ void YqbHttpClient::sendRechargeRequest()
 
     QJsonDocument jsonDocument(*body);
     QByteArray jsonData = jsonDocument.toJson();
-    m_networkAccessManager.post(request, jsonData);
+    m_networkAccessManager->post(request, jsonData);
+    qInfo("send recharge request for %s", m_result.m_coupon.m_couponId.toStdString().c_str());
 }
 
 void YqbHttpClient::processRechargeResponse(QNetworkReply *reply)
@@ -237,6 +241,7 @@ void YqbHttpClient::processRechargeResponse(QNetworkReply *reply)
     }
     else
     {
+        m_result.m_success = false;
         m_result.m_resultMsg = root["resultMsg"].toString();
         emit chargeCompletely(true, "", m_result);
         return;
