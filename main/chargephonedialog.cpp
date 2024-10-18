@@ -27,6 +27,7 @@ void ChargePhoneDialog::initCtrls()
 {
     ui->phoneNumberEdit->setText(m_chargePhone.m_phoneNumber);
     ui->moneyCountEdit->setText(QString::number(m_chargePhone.m_moneyCount));
+    ui->chargedMoneyEdit->setText(QString::number(m_chargePhone.m_chargeMoney));
     ui->priorityEdit->setText(QString::number(m_chargePhone.m_priority));
     ui->remarkEdit->setText(m_chargePhone.m_remark);
 
@@ -48,9 +49,17 @@ void ChargePhoneDialog::onOkButtonClicked()
     }
 
     int moneyCount = ui->moneyCountEdit->text().toInt();
-    if (moneyCount == 0)
+    if (moneyCount <= 0)
     {
         UiUtil::showTip(QString::fromWCharArray(L"金额填写有误"));
+        return;
+    }
+
+    bool ok = false;
+    int chargedMoneyCount = ui->chargedMoneyEdit->text().toInt(&ok);
+    if (!ok || chargedMoneyCount < 0)
+    {
+        UiUtil::showTip(QString::fromWCharArray(L"已充金额填写有误"));
         return;
     }
 
@@ -63,6 +72,7 @@ void ChargePhoneDialog::onOkButtonClicked()
 
     m_chargePhone.m_phoneNumber = ui->phoneNumberEdit->text();
     m_chargePhone.m_moneyCount = moneyCount;
+    m_chargePhone.m_chargeMoney = chargedMoneyCount;
     m_chargePhone.m_priority = priority;
     m_chargePhone.m_remark = ui->remarkEdit->text();
     if (m_chargePhone.m_id.isEmpty())

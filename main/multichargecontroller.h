@@ -19,7 +19,7 @@ public:
 
 signals:
     // 充值金额发生变化时发送
-    void chargeChange();
+    void chargeChange(QString mobile);
 
     void runFinish(bool success);
 

@@ -46,6 +46,9 @@ private:
 
     // 可以调用多次
     void initPhoneTableView();
+    void updatePhoneTableView(int row, const ChargePhone& chargePhone);
+    void updatePhoneTableViewByMobile(QString mobile);
+    void updatePhoneTableViewById(QString id);
 
 private:
     Ui::MainWindow *ui;

@@ -80,6 +80,7 @@ void SettingManager::load()
             ChargePhone chargePhone;
             chargePhone.m_id = chargePhoneJson["id"].toString();
             chargePhone.m_moneyCount = chargePhoneJson["money"].toInt();
+            chargePhone.m_chargeMoney = chargePhoneJson["charge_money"].toInt();
             chargePhone.m_phoneNumber = chargePhoneJson["phone_number"].toString();
             chargePhone.m_priority = chargePhoneJson["priority"].toInt();
             chargePhone.m_remark = chargePhoneJson["remark"].toInt();
@@ -139,6 +140,7 @@ void SettingManager::save()
         QJsonObject chargePhoneObject;
         chargePhoneObject["id"] = chargePhone.m_id;
         chargePhoneObject["money"] = chargePhone.m_moneyCount;
+        chargePhoneObject["charge_money"] = chargePhone.m_chargeMoney;
         chargePhoneObject["phone_number"] = chargePhone.m_phoneNumber;
         chargePhoneObject["priority"] = chargePhone.m_priority;
         chargePhoneObject["remark"] = chargePhone.m_remark;

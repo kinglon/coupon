@@ -98,7 +98,7 @@ void MultiChargeController::doCharge(QString mobile, int chargeMoney, const QVec
                 break;
             }
         }
-        emit chargeChange();
+        emit chargeChange(mobile);
 
         // 可能有新的卡券到来，继续充值
         doCharge();

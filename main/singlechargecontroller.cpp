@@ -47,13 +47,14 @@ void SingleChargeController::doCharge()
                 m_sumChargeMoney += result.m_realFaceValue;
                 if (result.m_coupon.m_faceValue == result.m_realFaceValue)
                 {
-                    QString logContent = QString::fromWCharArray(L"成功充值%1元").arg(QString::number(result.m_realFaceValue));
+                    QString logContent = QString::fromWCharArray(L"手机%1成功充值%2元").arg(
+                                m_mobile, QString::number(result.m_realFaceValue));
                     emit printLog(logContent);
                 }
                 else
                 {
-                    QString logContent = QString::fromWCharArray(L"成功充值%1元，与面值%2元不一致").arg(
-                                QString::number(result.m_realFaceValue),
+                    QString logContent = QString::fromWCharArray(L"手机%1成功充值%2元，与面值%3元不一致").arg(
+                                m_mobile, QString::number(result.m_realFaceValue),
                                 QString::number(result.m_coupon.m_faceValue));
                     emit printLog(logContent);
                 }

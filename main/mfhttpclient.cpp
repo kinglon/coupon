@@ -329,7 +329,7 @@ void MfHttpClient::processBuyCardResponse(QNetworkReply *reply)
     if (reply->error() != QNetworkReply::NoError)
     {
         qCritical("failed to send the request of buying card, error: %d", reply->error());
-        emit buyCardCompletely(false, QString::fromWCharArray(L"购买失败：无法访问蜜蜂系统"), "");
+        emit buyCardCompletely(false, QString::fromWCharArray(L"购买失败：无法访问蜜蜂系统"));
         return;
     }
 
@@ -337,7 +337,7 @@ void MfHttpClient::processBuyCardResponse(QNetworkReply *reply)
     QJsonDocument jsonDocument = QJsonDocument::fromJson(data);
     if (jsonDocument.isNull() || jsonDocument.isEmpty())
     {
-        emit buyCardCompletely(false, QString::fromWCharArray(L"购买失败：蜜蜂系统返回数据有误"), "");
+        emit buyCardCompletely(false, QString::fromWCharArray(L"购买失败：蜜蜂系统返回数据有误"));
         return;
     }
 
@@ -347,18 +347,19 @@ void MfHttpClient::processBuyCardResponse(QNetworkReply *reply)
         QString recordId;
         QJsonObject data = root["data"].toObject();
         QJsonArray recordIds = data["record_ids"].toArray();
-        if (recordIds.size() > 0)
+        QVector<QString> recordStrings;
+        for (auto recordId : recordIds)
         {
-            recordId = QString::number(recordIds[0].toInt());
+            recordStrings.append(QString::number(recordId.toInt()));
         }
 
-        emit buyCardCompletely(true, "", recordId);
+        emit buyCardCompletely(true, "", recordStrings);
         return;
     }
     else
     {
         QString message = root["message"].toString();
-        emit buyCardCompletely(false, message, "");
+        emit buyCardCompletely(false, message);
         return;
     }
 }

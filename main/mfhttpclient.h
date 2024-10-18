@@ -81,7 +81,7 @@ signals:
 
     void getFaceValStockListCompletely(bool success, QString errorMsg, QVector<FaceValStock> faceValStocks);
 
-    void buyCardCompletely(bool success, QString errorMsg, QString recordId);
+    void buyCardCompletely(bool success, QString errorMsg, QVector<QString> recordIds=QVector<QString>());
 
     void getCouponCompletely(bool success, QString errorMsg, QVector<GetCouponResult> result);
 

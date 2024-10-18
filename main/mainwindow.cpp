@@ -87,26 +87,70 @@ void MainWindow::initPhoneTableView()
     QVector<ChargePhone>& phones = SettingManager::getInstance()->m_chargePhones;
     for (int i=0; i<phones.size(); i++)
     {
-        QStandardItem* item = new QStandardItem(phones[i].m_phoneNumber);
-        item->setTextAlignment(Qt::AlignCenter);
-        m_phoneModel.setItem(i, 0, item);
+        updatePhoneTableView(i, phones[i]);
+    }
+}
 
-        item = new QStandardItem(QString::number(phones[i].m_priority));
-        item->setTextAlignment(Qt::AlignCenter);
-        m_phoneModel.setItem(i, 1, item);
+void MainWindow::updatePhoneTableView(int row, const ChargePhone& chargePhone)
+{
+    QStandardItem* item = new QStandardItem(chargePhone.m_phoneNumber);
+    item->setTextAlignment(Qt::AlignCenter);
+    m_phoneModel.setItem(row, 0, item);
 
-        item = new QStandardItem(QString::number(phones[i].m_moneyCount));
-        item->setTextAlignment(Qt::AlignCenter);
-        m_phoneModel.setItem(i, 2, item);
+    item = new QStandardItem(QString::number(chargePhone.m_priority));
+    item->setTextAlignment(Qt::AlignCenter);
+    m_phoneModel.setItem(row, 1, item);
 
-        item = new QStandardItem(QString::number(phones[i].m_chargeMoney));
-        item->setTextAlignment(Qt::AlignCenter);
-        m_phoneModel.setItem(i, 3, item);
+    item = new QStandardItem(QString::number(chargePhone.m_moneyCount));
+    item->setTextAlignment(Qt::AlignCenter);
+    m_phoneModel.setItem(row, 2, item);
 
-        item = new QStandardItem(phones[i].m_remark);
-        m_phoneModel.setItem(i, 4, item);
+    item = new QStandardItem(QString::number(chargePhone.m_chargeMoney));
+    item->setTextAlignment(Qt::AlignCenter);
+    m_phoneModel.setItem(row, 3, item);
 
-        m_phoneModel.setData(m_phoneModel.index(i,0), phones[i].m_id, Qt::UserRole);
+    item = new QStandardItem(chargePhone.m_remark);
+    m_phoneModel.setItem(row, 4, item);
+
+    m_phoneModel.setData(m_phoneModel.index(row, 0), chargePhone.m_id, Qt::UserRole);
+}
+
+void MainWindow::updatePhoneTableViewByMobile(QString mobile)
+{
+    QString id;
+    for (const auto& chargePhone : SettingManager::getInstance()->m_chargePhones)
+    {
+        if (chargePhone.m_phoneNumber == mobile)
+        {
+            id = chargePhone.m_id;
+            break;
+        }
+    }
+
+    if (!id.isEmpty())
+    {
+        updatePhoneTableViewById(id);
+    }
+}
+
+void MainWindow::updatePhoneTableViewById(QString id)
+{
+    QVector<ChargePhone>& phones = SettingManager::getInstance()->m_chargePhones;
+    for (int i=0; i<phones.size(); i++)
+    {
+        if (id == phones[i].m_id)
+        {
+            for (int row=0; row<m_phoneModel.rowCount(); row++)
+            {
+                if (m_phoneModel.data(m_phoneModel.index(row,0), Qt::UserRole) == id)
+                {
+                    updatePhoneTableView(row, phones[i]);
+                    return;
+                }
+            }
+
+            break;
+        }
     }
 }
 
@@ -247,8 +291,8 @@ void MainWindow::onStartBuyButtonClicked()
 
     m_multiChargeController = new MultiChargeController();
     connect(m_multiChargeController, &MultiChargeController::printLog, this, &MainWindow::onPrintLog);
-    connect(m_multiChargeController, &MultiChargeController::chargeChange, [this]() {
-        initPhoneTableView();
+    connect(m_multiChargeController, &MultiChargeController::chargeChange, [this](QString mobile) {
+        updatePhoneTableViewByMobile(mobile);
     });
     connect(m_multiChargeController, &MultiChargeController::runFinish, [this](bool success) {
         if (success)
@@ -317,7 +361,7 @@ void MainWindow::onEditPhoneTableView(int row)
     }
 
     SettingManager::getInstance()->updateChargePhone(dlg.getChargePhone());
-    initPhoneTableView();
+    updatePhoneTableViewById(chargePhone.m_id);
 }
 
 void MainWindow::onDeletePhoneTableView(int row)

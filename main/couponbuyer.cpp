@@ -111,6 +111,7 @@ void CouponBuyer::onMainTimer()
                     QString logContent = QString::fromWCharArray(L"求购面额%1元的卡券成功").arg(buyStatusPtr->m_buyCouponSetting.m_faceVal);
                     emit printLog(logContent);
                     buyStatusPtr->m_recordId = recordId;
+                    buyStatusPtr->m_buyRecordIds.clear();
                 }
                 mfClient->deleteLater();
             });
@@ -173,7 +174,7 @@ void CouponBuyer::onMainTimer()
 
             MfHttpClient* mfClient = new MfHttpClient(this);
             CouponBuyStatus* buyStatusPtr = &buyStatus;
-            connect(mfClient, &MfHttpClient::buyCardCompletely, [this, mfClient, buyStatusPtr](bool success, QString errorMsg, QString recordId) {
+            connect(mfClient, &MfHttpClient::buyCardCompletely, [this, mfClient, buyStatusPtr](bool success, QString errorMsg, QVector<QString> recordIds) {
                 if (!success)
                 {
                     QString logContent = QString::fromWCharArray(L"面额%1元购买失败：%2").arg(
@@ -183,8 +184,17 @@ void CouponBuyer::onMainTimer()
                 }
                 else
                 {
-                    buyStatusPtr->m_buyRecordId = recordId;
+                    for (const auto& recordId : recordIds)
+                    {
+                        if (!buyStatusPtr->m_buyRecordIds.contains(recordId))
+                        {
+                            buyStatusPtr->m_buyRecordId = recordId;
+                            buyStatusPtr->m_buyRecordIds.insert(recordId);
+                            break;
+                        }
+                    }
                 }
+
                 mfClient->deleteLater();
             });
             mfClient->buyCard(SKUID, buyStatus.m_buyCouponSetting.m_faceVal, buyCount, buyStatus.m_buyCouponSetting.m_discount);

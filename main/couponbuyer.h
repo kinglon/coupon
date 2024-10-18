@@ -37,6 +37,9 @@ public:
     // 购买的record_id，用于查询卡券信息
     QString m_buyRecordId;
 
+    // 本次求购所有的购买记录
+    QSet<QString> m_buyRecordIds;
+
     // 标志是否正在查询卡券
     bool m_queryCouponInfo = false;
 
