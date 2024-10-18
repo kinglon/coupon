@@ -1,5 +1,6 @@
 ﻿#include "singlechargecontroller.h"
 #include "yqbhttpclient.h"
+#include <QTimer>
 
 SingleChargeController::SingleChargeController(QObject *parent)
     : QObject{parent}
@@ -44,8 +45,18 @@ void SingleChargeController::doCharge()
             {
                 // 充值成功
                 m_sumChargeMoney += result.m_realFaceValue;
-                QString logContent = QString::fromWCharArray(L"成功充值%1元").arg(QString::number(m_sumChargeMoney));
-                emit printLog(logContent);                
+                if (result.m_coupon.m_faceValue == result.m_realFaceValue)
+                {
+                    QString logContent = QString::fromWCharArray(L"成功充值%1元").arg(QString::number(result.m_realFaceValue));
+                    emit printLog(logContent);
+                }
+                else
+                {
+                    QString logContent = QString::fromWCharArray(L"成功充值%1元，与面值%2元不一致").arg(
+                                QString::number(result.m_realFaceValue),
+                                QString::number(result.m_coupon.m_faceValue));
+                    emit printLog(logContent);
+                }
             }
 
             if (m_sumChargeMoney >= m_chargeMoney)
@@ -61,7 +72,14 @@ void SingleChargeController::doCharge()
                 }
                 else
                 {
-                    doCharge();
+                    // 延后2秒继续充值
+                    QTimer* timer = new QTimer(this);
+                    connect(timer, &QTimer::timeout, [this, timer]() {
+                        timer->stop();
+                        timer->deleteLater();
+                        doCharge();
+                    });
+                    timer->start(2000);
                 }
             }
         }

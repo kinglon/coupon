@@ -3,6 +3,7 @@
 #include <QCryptographicHash>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include "settingmanager.h"
 
 #define MF_HOST "https://merchant.task.mf178.cn"
 #define URI_WANT_BUY_CARD "/api/card/want_buy_card"
@@ -20,7 +21,7 @@ MfHttpClient::MfHttpClient(QObject *parent)
 
 void MfHttpClient::appendPublicParams(QJsonObject& params)
 {
-    params["app_key"] = "756384562";
+    params["app_key"] = SettingManager::getInstance()->m_mfSetting.m_appKey;
     params["timestamp"] = QDateTime::currentDateTime().currentSecsSinceEpoch();
     QStringList keys = params.keys();
     keys.sort();
@@ -45,7 +46,7 @@ void MfHttpClient::appendPublicParams(QJsonObject& params)
             qCritical("the type of param key(%s) is not int or string", key.toStdString().c_str());
         }
     }
-    paramString += "66fa92d96da87";
+    paramString += SettingManager::getInstance()->m_mfSetting.m_appSecret;
 
     QByteArray textBytes = paramString.toUtf8();
     QCryptographicHash hash(QCryptographicHash::Md5);
@@ -153,7 +154,7 @@ void MfHttpClient::buyCard(QString sku, int faceVal, int buyCount, int discount)
     QJsonObject body;
     body["goods_sku"] = sku;
     body["face_val"] = faceVal;
-    body["callback_url"] = "http://beekeep.mkwen.cn/";
+    body["callback_url"] = SettingManager::getInstance()->m_mfSetting.m_callbackHost;
 
     QJsonArray datas;
     QJsonObject data;

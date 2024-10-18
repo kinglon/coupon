@@ -4,6 +4,7 @@
 #include <QImage>
 #include <QPainter>
 #include <QFile>
+#include "settingmanager.h"
 
 #define REPORT_INTERVAL 3000
 
@@ -30,7 +31,7 @@ void OrderStatusReporter::reportOrderStatus(QString recordId, QString orderId, c
     if (chargeResult.m_success)
     {
         if (chargeResult.m_coupon.m_faceValue != chargeResult.m_realFaceValue)
-        {
+        {            
             reportStatus.m_orderStatus.m_success = false;
             reportStatus.m_orderStatus.m_error = QString::fromWCharArray(L"面值不符（我绑卡了，按实际面值结算）");
         }
@@ -55,14 +56,14 @@ void OrderStatusReporter::reportOrderStatus(QString recordId, QString orderId, c
         }
     }
 
-    if (!chargeResult.m_success)
+    if (!reportStatus.m_orderStatus.m_success)
     {
         QString imageFileName = orderId + ".jpg";
         if (!generateImage(imageFileName, chargeResult))
         {
             return;
         }
-        reportStatus.m_orderStatus.m_imageUrl = "http://beekeep.mkwen.cn/" + imageFileName;
+        reportStatus.m_orderStatus.m_imageUrl = SettingManager::getInstance()->m_mfSetting.m_callbackHost + "/" + imageFileName;
     }
     m_reportStatus.append(reportStatus);
 }
@@ -116,6 +117,10 @@ void OrderStatusReporter::onMainTimer()
                 if (!success)
                 {
                     qCritical(errorMsg.toStdString().c_str());
+                    if (errorMsg.indexOf(QString::fromWCharArray(L"已处理过")) >= 0)
+                    {
+                        success = true;
+                    }
                 }
 
                 for (auto it=m_reportStatus.begin(); it!=m_reportStatus.end(); it++)

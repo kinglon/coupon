@@ -31,6 +31,11 @@ void SettingDialog::initCtrls()
 
     ui->queryStockIntervalEdit->setText(QString::number(SettingManager::getInstance()->m_mfQueryStockInterval/1000));
 
+    const auto& mfSetting = SettingManager::getInstance()->m_mfSetting;
+    ui->mfAppKeyEdit->setText(mfSetting.m_appKey);
+    ui->mfSecretEdit->setText(mfSetting.m_appSecret);
+    ui->mfCallbackHostEdit->setText(mfSetting.m_callbackHost);
+
     connect(ui->okButton, &QPushButton::clicked, [this]() {
         onOkButtonClicked();
     });
@@ -61,7 +66,18 @@ void SettingDialog::onOkButtonClicked()
         return;
     }
 
+    MfSetting mfSetting;
+    mfSetting.m_appKey = ui->mfAppKeyEdit->text();
+    mfSetting.m_appSecret = ui->mfSecretEdit->text();
+    mfSetting.m_callbackHost = ui->mfCallbackHostEdit->text();
+    if (!mfSetting.isValid())
+    {
+        UiUtil::showTip(QString::fromWCharArray(L"请正确填写蜜蜂设置"));
+        return;
+    }
+
     SettingManager::getInstance()->m_yqbSetting = yqbSetting;
+    SettingManager::getInstance()->m_mfSetting = mfSetting;
     SettingManager::getInstance()->m_mfQueryStockInterval = queryStockInterval * 1000;
     SettingManager::getInstance()->save();
 

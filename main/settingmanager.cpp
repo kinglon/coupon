@@ -99,6 +99,14 @@ void SettingManager::load()
             m_coupons.append(coupon);
         }
     }
+
+    if (root.contains("mf"))
+    {
+        QJsonObject mfObject = root["mf"].toObject();
+        m_mfSetting.m_appKey = mfObject["appkey"].toString();
+        m_mfSetting.m_appSecret = mfObject["appsecret"].toString();
+        m_mfSetting.m_callbackHost = mfObject["callback_host"].toString();
+    }
 }
 
 void SettingManager::save()
@@ -147,6 +155,12 @@ void SettingManager::save()
         couponArray.append(couponObject);
     }
     root["coupon"] = couponArray;
+
+    QJsonObject mfObject;
+    mfObject["appkey"] = m_mfSetting.m_appKey;
+    mfObject["appsecret"] = m_mfSetting.m_appSecret;
+    mfObject["callback_host"] = m_mfSetting.m_callbackHost;
+    root["mf"] = mfObject;
 
     QJsonDocument jsonDocument(root);
     QByteArray jsonData = jsonDocument.toJson(QJsonDocument::Indented);

@@ -247,6 +247,9 @@ void MainWindow::onStartBuyButtonClicked()
 
     m_multiChargeController = new MultiChargeController();
     connect(m_multiChargeController, &MultiChargeController::printLog, this, &MainWindow::onPrintLog);
+    connect(m_multiChargeController, &MultiChargeController::chargeChange, [this]() {
+        initPhoneTableView();
+    });
     connect(m_multiChargeController, &MultiChargeController::runFinish, [this](bool success) {
         if (success)
         {

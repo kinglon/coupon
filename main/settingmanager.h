@@ -65,6 +65,30 @@ public:
     }
 };
 
+// 蜜蜂系统设置
+class MfSetting
+{
+public:
+    // APP KEY
+    QString m_appKey = "756384562";
+
+    // APP SECRET
+    QString m_appSecret = "66fa92d96da87";
+
+    // 回调host
+    QString m_callbackHost = "http://beekeep.mkwen.cn";
+
+    bool isValid()
+    {
+        if (m_appKey.isEmpty() || m_appSecret.isEmpty() || m_callbackHost.isEmpty())
+        {
+            return false;
+        }
+
+        return true;
+    }
+};
+
 class SettingManager
 {
 protected:
@@ -102,4 +126,7 @@ public:
 
     // 查询卡券库存间隔，单位毫秒
     int m_mfQueryStockInterval = 5000;
+
+    // 蜜蜂设置
+    MfSetting m_mfSetting;
 };
