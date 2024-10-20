@@ -27,6 +27,11 @@ public:
     */
     static CLogUtil* GetLog(const wchar_t* szLogName);
 
+    /**
+    @name 控制日志文件名是否要加日期
+    */
+    static void SetFileNameWithDate(bool fileNameWithDate) { s_fileNameWithDate = fileNameWithDate; }
+
 public:
     /**
     @name 设置日志级别
@@ -50,6 +55,7 @@ private:
 private:
     static std::map<std::wstring, CLogUtil*> s_mapLogName2LogUtil;
     static CCSWrap s_csLogMapObject;  //多线程保护m_mapLogName2LogUtil
+    static bool s_fileNameWithDate;  // 标志文件名是否要加上日期
     ELogLevel m_logLevel = ELogLevel::LOG_LEVEL_DEBUG;
     CCSWrap m_csLog;  //多线程控制日志打印
     FILE* m_fpFile = nullptr;

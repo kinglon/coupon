@@ -6,7 +6,7 @@
 #include <QFile>
 #include "settingmanager.h"
 
-#define REPORT_INTERVAL 3000
+#define MAX_SEND_REQUEST_COUNT 3
 
 OrderStatusReporter::OrderStatusReporter(QObject *parent)
     : QObject{parent}
@@ -109,14 +109,13 @@ void OrderStatusReporter::onMainTimer()
 {
     for (auto& reportStatus : m_reportStatus)
     {
-        if (!reportStatus.m_sendingRequest && GetTickCount64() - reportStatus.m_lastReportTime >= REPORT_INTERVAL)
+        if (!reportStatus.m_sendingRequest)
         {
             QString orderId = reportStatus.m_orderStatus.m_orderId;
             MfHttpClient* mfClient = new MfHttpClient(this);
             connect(mfClient, &MfHttpClient::reportOrderStatusCompletely, [this, orderId, mfClient](bool success, QString errorMsg) {
                 if (!success)
-                {
-                    qCritical(errorMsg.toStdString().c_str());
+                {                    
                     if (errorMsg.indexOf(QString::fromWCharArray(L"已处理过")) >= 0)
                     {
                         success = true;
@@ -133,6 +132,17 @@ void OrderStatusReporter::onMainTimer()
                             qInfo("successful to report status of order: %s", orderId.toStdString().c_str());
                             m_reportStatus.erase(it);
                         }
+                        else
+                        {
+                            QString logContent = QString::fromWCharArray(L"上报订单(%1)状态失败：%2").arg(
+                                        orderId.toStdString().c_str(),
+                                        errorMsg.toStdString().c_str());
+                            emit printLog(logContent);
+                            if (it->m_sendReqCount >= MAX_SEND_REQUEST_COUNT)
+                            {
+                                m_reportStatus.erase(it);
+                            }
+                        }
                         break;
                     }
                 }
@@ -141,7 +151,7 @@ void OrderStatusReporter::onMainTimer()
             });
             mfClient->reportOrderStatus(reportStatus.m_orderStatus);
             qInfo("report status of order: %s", reportStatus.m_orderStatus.m_orderId.toStdString().c_str());
-            reportStatus.m_lastReportTime = GetTickCount64();
+            reportStatus.m_sendReqCount++;
             reportStatus.m_sendingRequest = true;
         }
     }

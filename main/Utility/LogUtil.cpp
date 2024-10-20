@@ -9,6 +9,7 @@ using namespace std;
 
 map<std::wstring, CLogUtil*> CLogUtil::s_mapLogName2LogUtil;
 CCSWrap CLogUtil::s_csLogMapObject;
+bool CLogUtil::s_fileNameWithDate = true;
 
 CLogUtil::CLogUtil(const wchar_t* szLogFileName)
 {
@@ -98,7 +99,14 @@ void CLogUtil::OpenLog(const wchar_t* szLogFileName)
 
     wchar_t szLogFile[MAX_PATH];
     memset(szLogFile, 0, sizeof(szLogFile));
-    _snwprintf_s(szLogFile, MAX_PATH, MAX_PATH, L"%s%s.%4d%02d%02d.log", CImPath::GetLogPath().c_str(), szLogFileName, st.wYear, st.wMonth, st.wDay); //如C:\\BERR.20111213.log
+    if (s_fileNameWithDate)
+    {
+        _snwprintf_s(szLogFile, MAX_PATH, MAX_PATH, L"%s%s.%4d%02d%02d.log", CImPath::GetLogPath().c_str(), szLogFileName, st.wYear, st.wMonth, st.wDay); //如C:\\BERR.20111213.log
+    }
+    else
+    {
+        _snwprintf_s(szLogFile, MAX_PATH, MAX_PATH, L"%s%s.log", CImPath::GetLogPath().c_str(), szLogFileName); //如C:\\BERR.log
+    }
     m_fpFile = _wfsopen(szLogFile, L"a+b", _SH_DENYNO);
     if (m_fpFile)
     {

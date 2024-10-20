@@ -12,8 +12,8 @@ public:
     // 订单状态
     OrderStatus m_orderStatus;
 
-    // 上一次报告时间
-    qint64 m_lastReportTime = 0;
+    // 发送请求的次数
+    int m_sendReqCount = 0;
 
     // 标志是否正在发送请求
     bool m_sendingRequest = false;
@@ -32,6 +32,9 @@ public:
     void reportOrderStatus(QString recordId, QString orderId, const ChargeResult& chargeResult);
 
     bool generateImage(QString fileName, const ChargeResult& chargeResult);
+
+signals:
+    void printLog(QString content);
 
 private slots:
     void onMainTimer();

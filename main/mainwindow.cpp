@@ -6,6 +6,8 @@
 #include "uiutil.h"
 #include <QMenu>
 #include <QDateTime>
+#include "orderstatusreporter.h"
+#include "Utility/LogUtil.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -22,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_ctrlDShortcut, &QShortcut::activated, this, &MainWindow::onCtrlDShortcut);
 
     connect(&m_loginController, &LoginController::printLog, this, &MainWindow::onPrintLog);
+    connect(OrderStatusReporter::getInstance(), &OrderStatusReporter::printLog, this, &MainWindow::onPrintLog);
 }
 
 MainWindow::~MainWindow()
@@ -210,6 +213,16 @@ void MainWindow::onPrintLog(QString content)
     QString currentTimeString = currentDateTime.toString("[MM-dd hh:mm:ss] ");
     QString line = currentTimeString + content;
     ui->logEdit->append(line);
+
+    // 保存到单独的日志文件
+    static CLogUtil* logUtil = nullptr;
+    if (logUtil == nullptr)
+    {
+        CLogUtil::SetFileNameWithDate(false);
+        logUtil = CLogUtil::GetLog(L"日志");
+        CLogUtil::SetFileNameWithDate(true);
+    }
+    logUtil->Log(nullptr, 0, ELogLevel::LOG_LEVEL_INFO, content.remove(QChar('%')).toStdWString().c_str());
 }
 
 void MainWindow::onStartBuyButtonClicked()

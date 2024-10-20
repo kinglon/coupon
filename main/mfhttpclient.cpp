@@ -184,6 +184,7 @@ void MfHttpClient::getCoupon(QString recordId)
     QJsonDocument jsonDocument(body);
     QByteArray jsonData = jsonDocument.toJson();
     m_networkAccessManager->post(request, jsonData);
+    qInfo("send the request of getting coupon, zx_id=%s", recordId.toStdString().c_str());
 }
 
 void MfHttpClient::reportOrderStatus(const OrderStatus& orderStatus)

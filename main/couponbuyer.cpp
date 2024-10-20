@@ -111,7 +111,6 @@ void CouponBuyer::onMainTimer()
                     QString logContent = QString::fromWCharArray(L"求购面额%1元的卡券成功").arg(buyStatusPtr->m_buyCouponSetting.m_faceVal);
                     emit printLog(logContent);
                     buyStatusPtr->m_recordId = recordId;
-                    buyStatusPtr->m_buyRecordIds.clear();
                 }
                 mfClient->deleteLater();
             });
@@ -157,11 +156,11 @@ void CouponBuyer::onMainTimer()
             mfClient->deleteLater();
         });
         mfClient->getFaceValStockList(SKUID);
-        emit printLog(QString::fromWCharArray(L"查询库存"));
+        qInfo("query coupon stock list");
         m_lastGetFaceValStockTime = GetTickCount64();
     }
 
-    // 购买卡券    
+    // 购买卡券
     for (auto& buyStatus : m_couponBuyStatus)
     {
         if (buyStatus.canBuyCard() && buyStatus.m_buyCouponSetting.m_faceVal <= needMoney)
@@ -174,7 +173,7 @@ void CouponBuyer::onMainTimer()
 
             MfHttpClient* mfClient = new MfHttpClient(this);
             CouponBuyStatus* buyStatusPtr = &buyStatus;
-            connect(mfClient, &MfHttpClient::buyCardCompletely, [this, mfClient, buyStatusPtr](bool success, QString errorMsg, QVector<QString> recordIds) {
+            connect(mfClient, &MfHttpClient::buyCardCompletely, [this, mfClient, buyStatusPtr, buyCount](bool success, QString errorMsg, QVector<QString> recordIds) {
                 if (!success)
                 {
                     QString logContent = QString::fromWCharArray(L"面额%1元购买失败：%2").arg(
@@ -186,90 +185,135 @@ void CouponBuyer::onMainTimer()
                 {
                     for (const auto& recordId : recordIds)
                     {
-                        if (!buyStatusPtr->m_buyRecordIds.contains(recordId))
+                        bool found = false;
+                        for (const auto& buyRecord : buyStatusPtr->m_buyRecords)
                         {
-                            buyStatusPtr->m_buyRecordId = recordId;
-                            buyStatusPtr->m_buyRecordIds.insert(recordId);
-                            break;
+                            if (buyRecord.m_buyRecordId == recordId)
+                            {
+                                found = true;
+                            }
+                        }
+                        if (!found)
+                        {
+                            BuyRecord buyRecord;
+                            buyRecord.m_buyRecordId = recordId;
+                            buyStatusPtr->m_buyRecords.append(buyRecord);
+                            qInfo("add a buy record: %s", recordId.toStdString().c_str());
                         }
                     }
+
+                    onBuyCoupon(buyStatusPtr->m_buyCouponSetting.m_faceVal, buyCount);
                 }
 
                 mfClient->deleteLater();
             });
             mfClient->buyCard(SKUID, buyStatus.m_buyCouponSetting.m_faceVal, buyCount, buyStatus.m_buyCouponSetting.m_discount);
             qInfo("buy %d coupons of %d yuan", buyCount, buyStatus.m_buyCouponSetting.m_faceVal);
-            buyStatus.m_availCount = 0;
+            buyStatus.m_availCount -= buyCount;
         }
     }
 
     // 获取卡券信息
     for (auto& buyStatus : m_couponBuyStatus)
     {
-        if (!buyStatus.m_buyRecordId.isEmpty() && !buyStatus.m_queryCouponInfo)
+        for (auto& buyRecord : buyStatus.m_buyRecords)
         {
+            if (buyRecord.m_queryCouponInfo)
+            {
+                continue;
+            }
+
             MfHttpClient* mfClient = new MfHttpClient(this);
             CouponBuyStatus* buyStatusPtr = &buyStatus;
-            connect(mfClient, &MfHttpClient::getCouponCompletely, [this, mfClient, buyStatusPtr](bool success, QString errorMsg, QVector<GetCouponResult> result) {
-                buyStatusPtr->m_queryCouponInfo = false;
-                if (!success)
-                {                    
-                    QString logContent = QString::fromWCharArray(L"面额%1元卡券信息获取失败：%2").arg(
-                                QString::number(buyStatusPtr->m_buyCouponSetting.m_faceVal),
-                                errorMsg);
-                    emit printLog(logContent);
-                }
-                else
-                {
-                    if (result.isEmpty())
-                    {
-                        qInfo("it is buying, not have any coupons now");
-                    }
-                    else
-                    {
-                        QString logContent = QString::fromWCharArray(L"面额%1元卡券成功购买%2张").arg(
-                                QString::number(buyStatusPtr->m_buyCouponSetting.m_faceVal),
-                                QString::number(result.size()));
-                        emit printLog(logContent);
-
-                        for (auto& item : result)
-                        {
-                            item.m_recordId = buyStatusPtr->m_buyRecordId;
-                            m_totalBoughtMoney += item.m_coupon.m_faceValue;
-                        }
-
-                        if (m_totalBoughtMoney < m_totalWillBuyMoney)
-                        {
-                            logContent = QString::fromWCharArray(L"待购买总金额%1").arg(
-                                    QString::number(m_totalWillBuyMoney-m_totalBoughtMoney));
-                            emit printLog(logContent);
-                        }
-
-                        emit haveNewCoupon(result);
-
-                        buyStatusPtr->m_buyRecordId = "";
-                        for (auto& buyStatus : m_couponBuyStatus)
-                        {
-                            for (auto& coupon : result)
-                            {
-                                if (buyStatus.m_buyCouponSetting.m_faceVal == coupon.m_coupon.m_faceValue)
-                                {
-                                    buyStatus.m_boughtCount++;
-                                }
-                            }
-
-                            if (buyStatus.m_boughtCount >= buyStatus.m_buyCouponSetting.m_willBuyCount)
-                            {
-                                buyStatus.m_boughtCount = 0;
-                                buyStatus.m_needSendWantBuyRequest = true;
-                            }
-                        }
-                    }
-                }
+            QString buyRecordId = buyRecord.m_buyRecordId;
+            connect(mfClient, &MfHttpClient::getCouponCompletely, [this, mfClient, buyStatusPtr, buyRecordId](bool success, QString errorMsg, QVector<GetCouponResult> result) {
+                onGetCouponCompletely(buyStatusPtr, buyRecordId, success, errorMsg, result);
                 mfClient->deleteLater();
             });
-            mfClient->getCoupon(buyStatus.m_buyRecordId);
-            buyStatus.m_queryCouponInfo = true;
+            mfClient->getCoupon(buyRecordId);
+            buyRecord.m_queryCouponInfo = true;
+        }
+    }
+}
+
+void CouponBuyer::onBuyCoupon(int faceVal, int count)
+{
+    // 更新累计已购买金额
+    m_totalBoughtMoney += faceVal * count;
+    if (m_totalBoughtMoney < m_totalWillBuyMoney)
+    {
+        QString logContent = QString::fromWCharArray(L"待购买总金额%1").arg(
+                QString::number(m_totalWillBuyMoney-m_totalBoughtMoney));
+        emit printLog(logContent);
+    }
+
+    // 更新已购买张数，如果消耗完重新发起求购
+    for (auto& buyStatus : m_couponBuyStatus)
+    {
+        if (buyStatus.m_buyCouponSetting.m_faceVal == faceVal)
+        {
+            buyStatus.m_boughtCount += count;
+            if (buyStatus.m_boughtCount >= buyStatus.m_buyCouponSetting.m_willBuyCount)
+            {
+                buyStatus.m_boughtCount = 0;
+                buyStatus.m_needSendWantBuyRequest = true;
+            }
+            break;
+        }
+    }
+}
+
+void CouponBuyer::onGetCouponCompletely(CouponBuyStatus* buyStatusPtr, QString buyRecordId, bool success, QString errorMsg, QVector<GetCouponResult> result)
+{
+    bool remove = false;
+    if (!success)
+    {
+        QString logContent = QString::fromWCharArray(L"面额%1元卡券信息获取失败：%2").arg(
+                    QString::number(buyStatusPtr->m_buyCouponSetting.m_faceVal),
+                    errorMsg);
+        emit printLog(logContent);
+
+        // order_id或zx_id必须传一个，不再获取
+        if (errorMsg.indexOf(QString::fromWCharArray(L"必须传一个")) >= 0)
+        {
+            remove = true;
+        }
+    }
+    else
+    {
+        if (result.isEmpty())
+        {
+            qInfo("it is buying, not have any coupons now");
+        }
+        else
+        {
+            QString logContent = QString::fromWCharArray(L"面额%1元卡券成功购买%2张").arg(
+                    QString::number(buyStatusPtr->m_buyCouponSetting.m_faceVal),
+                    QString::number(result.size()));
+            emit printLog(logContent);
+
+            for (auto& item : result)
+            {
+                item.m_recordId = buyRecordId;
+            }
+
+            emit haveNewCoupon(result);
+
+            remove = true;
+        }
+    }
+
+    // 更新购买记录状态
+    for (int i=0; i<buyStatusPtr->m_buyRecords.size(); i++)
+    {
+        if (buyStatusPtr->m_buyRecords[i].m_buyRecordId == buyRecordId)
+        {
+            buyStatusPtr->m_buyRecords[i].m_queryCouponInfo = false;
+            if (remove)
+            {
+                buyStatusPtr->m_buyRecords.remove(i);
+            }
+            break;
         }
     }
 }
