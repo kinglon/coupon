@@ -91,7 +91,7 @@ private slots:
     void onBuyCoupon(int faceVal, int count);
 
     // 查询卡券返回
-    void onGetCouponCompletely(CouponBuyStatus* buyStatusPtr, QString buyRecordId, bool success, QString errorMsg, QVector<GetCouponResult> result);
+    void onGetCouponCompletely(QString buyRecordId, bool success, QString errorMsg, QVector<GetCouponResult> result);
 
 private:
     QTimer* m_mainTimer = nullptr;

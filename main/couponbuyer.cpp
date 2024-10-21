@@ -213,26 +213,22 @@ void CouponBuyer::onMainTimer()
         }
     }
 
-    // 获取卡券信息
-    for (auto& buyStatus : m_couponBuyStatus)
+    // 获取卡券信息    
+    for (auto& buyRecord : m_buyRecords)
     {
-        for (auto& buyRecord : m_buyRecords)
+        if (buyRecord.m_queryCouponInfo)
         {
-            if (buyRecord.m_queryCouponInfo)
-            {
-                continue;
-            }
-
-            MfHttpClient* mfClient = new MfHttpClient(this);
-            CouponBuyStatus* buyStatusPtr = &buyStatus;
-            QString buyRecordId = buyRecord.m_buyRecordId;
-            connect(mfClient, &MfHttpClient::getCouponCompletely, [this, mfClient, buyStatusPtr, buyRecordId](bool success, QString errorMsg, QVector<GetCouponResult> result) {
-                onGetCouponCompletely(buyStatusPtr, buyRecordId, success, errorMsg, result);
-                mfClient->deleteLater();
-            });
-            mfClient->getCoupon(buyRecordId);
-            buyRecord.m_queryCouponInfo = true;
+            continue;
         }
+
+        MfHttpClient* mfClient = new MfHttpClient(this);
+        QString buyRecordId = buyRecord.m_buyRecordId;
+        connect(mfClient, &MfHttpClient::getCouponCompletely, [this, mfClient, buyRecordId](bool success, QString errorMsg, QVector<GetCouponResult> result) {
+            onGetCouponCompletely(buyRecordId, success, errorMsg, result);
+            mfClient->deleteLater();
+        });
+        mfClient->getCoupon(buyRecordId);
+        buyRecord.m_queryCouponInfo = true;
     }
 }
 
@@ -263,14 +259,12 @@ void CouponBuyer::onBuyCoupon(int faceVal, int count)
     }
 }
 
-void CouponBuyer::onGetCouponCompletely(CouponBuyStatus* buyStatusPtr, QString buyRecordId, bool success, QString errorMsg, QVector<GetCouponResult> result)
+void CouponBuyer::onGetCouponCompletely(QString buyRecordId, bool success, QString errorMsg, QVector<GetCouponResult> result)
 {
     bool remove = false;
     if (!success)
     {
-        QString logContent = QString::fromWCharArray(L"面额%1元卡券信息获取失败：%2").arg(
-                    QString::number(buyStatusPtr->m_buyCouponSetting.m_faceVal),
-                    errorMsg);
+        QString logContent = QString::fromWCharArray(L"卡券信息获取失败：%1").arg(errorMsg);
         emit printLog(logContent);
 
         // order_id或zx_id必须传一个，不再获取
@@ -311,7 +305,7 @@ void CouponBuyer::onGetCouponCompletely(CouponBuyStatus* buyStatusPtr, QString b
         {
 
             QString logContent = QString::fromWCharArray(L"面额%1元卡券成功购买%2张").arg(
-                    QString::number(buyStatusPtr->m_buyCouponSetting.m_faceVal),
+                    QString::number(coupons[0].m_coupon.m_faceValue),
                     QString::number(coupons.size()));
             emit printLog(logContent);
 
