@@ -101,6 +101,7 @@ void MfHttpClient::wantBuyCard(QString sku, int faceVal, int buyCount, int disco
     QJsonDocument jsonDocument(body);
     QByteArray jsonData = jsonDocument.toJson();
     m_networkAccessManager->post(request, jsonData);
+    qInfo("send the request of wanting buy card, faceVal=%d, buyCount=%d, discount=%d", faceVal, buyCount, discount);
 }
 
 void MfHttpClient::cancelBuying(QString recordId)
@@ -168,6 +169,7 @@ void MfHttpClient::buyCard(QString sku, int faceVal, int buyCount, int discount)
     QJsonDocument jsonDocument(body);
     QByteArray jsonData = jsonDocument.toJson();
     m_networkAccessManager->post(request, jsonData);
+    qInfo("send the request of buying card, faceVal=%d, buyCount=%d, discount=%d", faceVal, buyCount, discount);
 }
 
 void MfHttpClient::getCoupon(QString recordId)
@@ -237,6 +239,7 @@ void MfHttpClient::processWantBuyCardResponse(QNetworkReply *reply)
     {
         QString recordId = root["data"].toObject()["record_id"].toString();
         emit wantBuyCardCompletely(true, "", recordId);
+        qInfo("want buy card completely, record id is %s", recordId.toStdString().c_str());
         return;
     }
     else
@@ -351,7 +354,9 @@ void MfHttpClient::processBuyCardResponse(QNetworkReply *reply)
         QVector<QString> recordStrings;
         for (auto recordId : recordIds)
         {
-            recordStrings.append(QString::number(recordId.toInt()));
+            QString recordString = QString::number(recordId.toInt());
+            recordStrings.append(recordString);
+            qInfo("buy card completely, record id is %s", recordString.toStdString().c_str());
         }
 
         emit buyCardCompletely(true, "", recordStrings);

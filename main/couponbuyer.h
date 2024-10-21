@@ -43,10 +43,7 @@ public:
     bool m_cancelling = false;
 
     // 库存数量
-    int m_availCount = 0;
-
-    // 购买记录列表
-    QVector<BuyRecord> m_buyRecords;
+    int m_availCount = 0;    
 
 public:
     // 用于判断能否继续购卡
@@ -114,6 +111,12 @@ private:
 
     // 当前已购买金额
     int m_totalBoughtMoney = 0;
+
+    // 购买记录列表
+    QVector<BuyRecord> m_buyRecords;
+
+    // 订单列表
+    QVector<QString> m_orderIds;
 };
 
 #endif // COUPONBUYER_H
