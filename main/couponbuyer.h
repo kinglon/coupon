@@ -18,6 +18,27 @@ public:
 
     // 标志是否正在查询卡券
     bool m_queryCouponInfo = false;
+
+    // 该购买记录的订单列表
+    QVector<QString> m_orderIds;
+
+    // 已购买的数量，包括已经购买还没有查到卡券
+    int m_boughtCount = 0;
+
+    // 标志是否允许查询卡券，有些错误后要暂停查询
+    bool m_allowQueryCouponInfo = true;
+
+public:
+    // 判断是否需要查询卡券
+    bool needQueryCouponInfo()
+    {
+        if (!m_queryCouponInfo && m_allowQueryCouponInfo && m_orderIds.size() < m_boughtCount)
+        {
+            return true;
+        }
+
+        return false;
+    }
 };
 
 // 每种面额卡券购买状态
@@ -27,13 +48,10 @@ public:
     // 购买卡券设置
     BuyCouponSetting m_buyCouponSetting;
 
-    // 已购买的数量
-    int m_boughtCount = 0;    
-
     // 标志是否需要发起求购
     bool m_needSendWantBuyRequest = false;
 
-    // 求购的record id，用于取消求购
+    // 当前求购的record id
     QString m_recordId;
 
     // 取消求购次数，用于控制多次重试
@@ -43,7 +61,10 @@ public:
     bool m_cancelling = false;
 
     // 库存数量
-    int m_availCount = 0;    
+    int m_availCount = 0;
+
+    // 购买的记录列表
+    QVector<BuyRecord> m_buyRecords;
 
 public:
     // 用于判断能否继续购卡
@@ -62,6 +83,48 @@ public:
         }
 
         return true;
+    }
+
+    // 获取能购买的卡券数量
+    int getCanBuyCount()
+    {
+        for (const auto& buyRecord : m_buyRecords)
+        {
+            if (buyRecord.m_buyRecordId == m_recordId)
+            {
+                int buyCount = m_buyCouponSetting.m_willBuyCount - buyRecord.m_boughtCount;
+                return buyCount;
+            }
+        }
+        return 0;
+    }
+
+    // 增加购买数量
+    void addBuyCount(const QString& recordId, int buyCount)
+    {
+        for (auto& buyRecord : m_buyRecords)
+        {
+            if (buyRecord.m_buyRecordId == recordId)
+            {
+                buyRecord.m_boughtCount += buyCount;
+                buyRecord.m_allowQueryCouponInfo = true;
+                break;
+            }
+        }
+    }
+
+    // 获取指定的购买记录
+    BuyRecord* getBuyRecord(QString recordId)
+    {
+        for (auto& buyRecord : m_buyRecords)
+        {
+            if (buyRecord.m_buyRecordId == recordId)
+            {
+                return &buyRecord;
+            }
+        }
+
+        return nullptr;
     }
 };
 
@@ -88,10 +151,10 @@ private slots:
     void onMainTimer();
 
     // 成功买到卡券
-    void onBuyCoupon(int faceVal, int count);
+    void onBuyCoupon(CouponBuyStatus* buyStatus, QString recordId, int count);
 
     // 查询卡券返回
-    void onGetCouponCompletely(QString buyRecordId, bool success, QString errorMsg, QVector<GetCouponResult> result);
+    void onGetCouponCompletely(CouponBuyStatus* buyStatus, QString buyRecordId, bool success, QString errorMsg, QVector<GetCouponResult> result);
 
 private:
     QTimer* m_mainTimer = nullptr;
@@ -111,12 +174,6 @@ private:
 
     // 当前已购买金额
     int m_totalBoughtMoney = 0;
-
-    // 购买记录列表
-    QVector<BuyRecord> m_buyRecords;
-
-    // 订单列表
-    QVector<QString> m_orderIds;
 };
 
 #endif // COUPONBUYER_H

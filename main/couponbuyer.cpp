@@ -110,7 +110,12 @@ void CouponBuyer::onMainTimer()
                 {
                     QString logContent = QString::fromWCharArray(L"求购面额%1元的卡券成功").arg(buyStatusPtr->m_buyCouponSetting.m_faceVal);
                     emit printLog(logContent);
+
                     buyStatusPtr->m_recordId = recordId;
+                    BuyRecord buyRecord;
+                    buyRecord.m_buyRecordId = recordId;
+                    buyStatusPtr->m_buyRecords.append(buyRecord);
+                    qInfo("add a buy record: %s", recordId.toStdString().c_str());
                 }
                 mfClient->deleteLater();
             });
@@ -165,7 +170,7 @@ void CouponBuyer::onMainTimer()
     {
         if (buyStatus.canBuyCard() && buyStatus.m_buyCouponSetting.m_faceVal <= needMoney)
         {
-            int buyCount = buyStatus.m_buyCouponSetting.m_willBuyCount - buyStatus.m_boughtCount;
+            int buyCount = buyStatus.getCanBuyCount();
             if (buyStatus.m_availCount < buyCount)
             {
                 buyCount = buyStatus.m_availCount;
@@ -183,26 +188,14 @@ void CouponBuyer::onMainTimer()
                 }
                 else
                 {
-                    for (const auto& recordId : recordIds)
+                    if (recordIds.size() != 1)
                     {
-                        bool found = false;
-                        for (const auto& buyRecord : m_buyRecords)
-                        {
-                            if (buyRecord.m_buyRecordId == recordId)
-                            {
-                                found = true;
-                            }
-                        }
-                        if (!found)
-                        {
-                            BuyRecord buyRecord;
-                            buyRecord.m_buyRecordId = recordId;
-                            m_buyRecords.append(buyRecord);
-                            qInfo("add a buy record: %s", recordId.toStdString().c_str());
-                        }
+                        qCritical("buy card completely, but the size of record is not 1");
                     }
-
-                    onBuyCoupon(buyStatusPtr->m_buyCouponSetting.m_faceVal, buyCount);
+                    else
+                    {
+                        onBuyCoupon(buyStatusPtr, recordIds[0], buyCount);
+                    }
                 }
 
                 mfClient->deleteLater();
@@ -213,29 +206,33 @@ void CouponBuyer::onMainTimer()
         }
     }
 
-    // 获取卡券信息    
-    for (auto& buyRecord : m_buyRecords)
+    // 查询卡券信息
+    for (auto& buyStatus : m_couponBuyStatus)
     {
-        if (buyRecord.m_queryCouponInfo)
+        for (auto& buyRecord : buyStatus.m_buyRecords)
         {
-            continue;
-        }
+            if (!buyRecord.needQueryCouponInfo())
+            {
+                continue;
+            }
 
-        MfHttpClient* mfClient = new MfHttpClient(this);
-        QString buyRecordId = buyRecord.m_buyRecordId;
-        connect(mfClient, &MfHttpClient::getCouponCompletely, [this, mfClient, buyRecordId](bool success, QString errorMsg, QVector<GetCouponResult> result) {
-            onGetCouponCompletely(buyRecordId, success, errorMsg, result);
-            mfClient->deleteLater();
-        });
-        mfClient->getCoupon(buyRecordId);
-        buyRecord.m_queryCouponInfo = true;
+            MfHttpClient* mfClient = new MfHttpClient(this);
+            CouponBuyStatus* buyStatusPtr = &buyStatus;
+            QString buyRecordId = buyRecord.m_buyRecordId;
+            connect(mfClient, &MfHttpClient::getCouponCompletely, [this, mfClient, buyStatusPtr, buyRecordId](bool success, QString errorMsg, QVector<GetCouponResult> result) {
+                onGetCouponCompletely(buyStatusPtr, buyRecordId, success, errorMsg, result);
+                mfClient->deleteLater();
+            });
+            mfClient->getCoupon(buyRecordId);
+            buyRecord.m_queryCouponInfo = true;
+        }
     }
 }
 
-void CouponBuyer::onBuyCoupon(int faceVal, int count)
+void CouponBuyer::onBuyCoupon(CouponBuyStatus* buyStatus, QString recordId, int buyCount)
 {
     // 更新累计已购买金额
-    m_totalBoughtMoney += faceVal * count;
+    m_totalBoughtMoney += buyStatus->m_buyCouponSetting.m_faceVal * buyCount;
     if (m_totalBoughtMoney < m_totalWillBuyMoney)
     {
         QString logContent = QString::fromWCharArray(L"待购买总金额%1").arg(
@@ -244,24 +241,34 @@ void CouponBuyer::onBuyCoupon(int faceVal, int count)
     }
 
     // 更新已购买张数，如果消耗完重新发起求购
-    for (auto& buyStatus : m_couponBuyStatus)
+    buyStatus->addBuyCount(recordId, buyCount);
+    if (recordId == buyStatus->m_recordId)
     {
-        if (buyStatus.m_buyCouponSetting.m_faceVal == faceVal)
+        for (auto& buyRecord : buyStatus->m_buyRecords)
         {
-            buyStatus.m_boughtCount += count;
-            if (buyStatus.m_boughtCount >= buyStatus.m_buyCouponSetting.m_willBuyCount)
+            if (buyRecord.m_buyRecordId == recordId)
             {
-                buyStatus.m_boughtCount = 0;
-                buyStatus.m_needSendWantBuyRequest = true;
+                if (buyRecord.m_boughtCount >= buyStatus->m_buyCouponSetting.m_willBuyCount)
+                {
+                    buyStatus->m_needSendWantBuyRequest = true;
+                }
+                break;
             }
-            break;
         }
     }
 }
 
-void CouponBuyer::onGetCouponCompletely(QString buyRecordId, bool success, QString errorMsg, QVector<GetCouponResult> result)
+void CouponBuyer::onGetCouponCompletely(CouponBuyStatus* buyStatus, QString buyRecordId, bool success, QString errorMsg, QVector<GetCouponResult> result)
 {
-    bool remove = false;
+    BuyRecord* buyRecord = buyStatus->getBuyRecord(buyRecordId);
+    if (buyRecord == nullptr)
+    {
+        qCritical("failed to find buy record of %s", buyRecordId.toStdString().c_str());
+        return;
+    }
+
+    buyRecord->m_queryCouponInfo = false;
+
     if (!success)
     {
         QString logContent = QString::fromWCharArray(L"卡券信息获取失败：%1").arg(errorMsg);
@@ -270,7 +277,7 @@ void CouponBuyer::onGetCouponCompletely(QString buyRecordId, bool success, QStri
         // order_id或zx_id必须传一个，不再获取
         if (errorMsg.indexOf(QString::fromWCharArray(L"必须传一个")) >= 0)
         {
-            remove = true;
+            buyRecord->m_allowQueryCouponInfo = false;
         }
     }
     else
@@ -278,22 +285,26 @@ void CouponBuyer::onGetCouponCompletely(QString buyRecordId, bool success, QStri
         QVector<GetCouponResult> coupons;
         for (auto& item : result)
         {
-            bool found = false;
-            for (const auto& orderId : m_orderIds)
-            {
-                if (item.m_orderId == orderId)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
+            if (!buyRecord->m_orderIds.contains(item.m_orderId))
             {
                 GetCouponResult coupon = item;
                 coupon.m_recordId = buyRecordId;
                 coupons.append(coupon);
-                m_orderIds.append(coupon.m_orderId);
+                buyRecord->m_orderIds.append(coupon.m_orderId);
+            }
+        }
+
+        // 如果卡券全部获取到，可以删除掉
+        if (buyRecord->m_orderIds.size() >= buyStatus->m_buyCouponSetting.m_willBuyCount)
+        {
+            for (int i=0; i<buyStatus->m_buyRecords.size(); i++)
+            {
+                if (buyStatus->m_buyRecords[i].m_buyRecordId == buyRecordId)
+                {
+                    buyStatus->m_buyRecords.remove(i);
+                    qInfo("delete a buy record: %s", buyRecordId.toStdString().c_str());
+                    break;
+                }
             }
         }
 
@@ -310,21 +321,6 @@ void CouponBuyer::onGetCouponCompletely(QString buyRecordId, bool success, QStri
             emit printLog(logContent);
 
             emit haveNewCoupon(coupons);
-            remove = true;
-        }
-    }
-
-    // 更新购买记录状态
-    for (int i=0; i<m_buyRecords.size(); i++)
-    {
-        if (m_buyRecords[i].m_buyRecordId == buyRecordId)
-        {
-            m_buyRecords[i].m_queryCouponInfo = false;
-            if (remove)
-            {
-                m_buyRecords.remove(i);
-            }
-            break;
         }
     }
 }
