@@ -38,13 +38,6 @@ void CouponBuyer::run()
 
 void CouponBuyer::onMainTimer()
 {
-    // 已达到购买金额，可以退出了
-    int needMoney = m_totalWillBuyMoney - m_totalBoughtMoney;
-    if (needMoney <= 0)
-    {
-        m_requestStop = true;
-    }
-
     // 请求取消求购
     if (m_requestStop)
     {
@@ -168,42 +161,52 @@ void CouponBuyer::onMainTimer()
     // 购买卡券
     for (auto& buyStatus : m_couponBuyStatus)
     {
-        if (buyStatus.canBuyCard() && buyStatus.m_buyCouponSetting.m_faceVal <= needMoney)
+        if (!buyStatus.canBuyCard())
         {
-            int buyCount = buyStatus.getCanBuyCount();
-            if (buyStatus.m_availCount < buyCount)
-            {
-                buyCount = buyStatus.m_availCount;
-            }
+            continue;
+        }
 
-            MfHttpClient* mfClient = new MfHttpClient(this);
-            CouponBuyStatus* buyStatusPtr = &buyStatus;
-            connect(mfClient, &MfHttpClient::buyCardCompletely, [this, mfClient, buyStatusPtr, buyCount](bool success, QString errorMsg, QVector<QString> recordIds) {
-                if (!success)
+        int buyCount = buyStatus.getCanBuyCount();
+
+        // 不可超过待购买的额度
+        int needMoney = m_totalWillBuyMoney - m_totalBoughtMoney;
+        int needCount = needMoney / buyStatus.m_buyCouponSetting.m_faceVal;
+        if (needCount < buyCount)
+        {
+            buyCount = needCount;
+        }
+        if (buyCount <= 0)
+        {
+            continue;
+        }
+
+        MfHttpClient* mfClient = new MfHttpClient(this);
+        CouponBuyStatus* buyStatusPtr = &buyStatus;
+        connect(mfClient, &MfHttpClient::buyCardCompletely, [this, mfClient, buyStatusPtr, buyCount](bool success, QString errorMsg, QVector<QString> recordIds) {
+            if (!success)
+            {
+                QString logContent = QString::fromWCharArray(L"面额%1元购买失败：%2").arg(
+                            QString::number(buyStatusPtr->m_buyCouponSetting.m_faceVal),
+                            errorMsg);
+                emit printLog(logContent);
+            }
+            else
+            {
+                if (recordIds.size() != 1)
                 {
-                    QString logContent = QString::fromWCharArray(L"面额%1元购买失败：%2").arg(
-                                QString::number(buyStatusPtr->m_buyCouponSetting.m_faceVal),
-                                errorMsg);
-                    emit printLog(logContent);
+                    qCritical("buy card completely, but the size of record is not 1");
                 }
                 else
                 {
-                    if (recordIds.size() != 1)
-                    {
-                        qCritical("buy card completely, but the size of record is not 1");
-                    }
-                    else
-                    {
-                        onBuyCoupon(buyStatusPtr, recordIds[0], buyCount);
-                    }
+                    onBuyCoupon(buyStatusPtr, recordIds[0], buyCount);
                 }
+            }
 
-                mfClient->deleteLater();
-            });
-            mfClient->buyCard(SKUID, buyStatus.m_buyCouponSetting.m_faceVal, buyCount, buyStatus.m_buyCouponSetting.m_discount);
-            qInfo("buy %d coupons of %d yuan", buyCount, buyStatus.m_buyCouponSetting.m_faceVal);
-            buyStatus.m_availCount -= buyCount;
-        }
+            mfClient->deleteLater();
+        });
+        mfClient->buyCard(SKUID, buyStatus.m_buyCouponSetting.m_faceVal, buyCount, buyStatus.m_buyCouponSetting.m_discount);
+        qInfo("buy %d coupons of %d yuan", buyCount, buyStatus.m_buyCouponSetting.m_faceVal);
+        buyStatus.m_availCount -= buyCount;
     }
 
     // 查询卡券信息

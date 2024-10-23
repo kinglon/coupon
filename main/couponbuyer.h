@@ -88,15 +88,25 @@ public:
     // 获取能购买的卡券数量
     int getCanBuyCount()
     {
+        int buyCount = 0;
+
+        // 不可以超过求购剩余未买的数量
         for (const auto& buyRecord : m_buyRecords)
         {
             if (buyRecord.m_buyRecordId == m_recordId)
             {
-                int buyCount = m_buyCouponSetting.m_willBuyCount - buyRecord.m_boughtCount;
-                return buyCount;
+                buyCount = m_buyCouponSetting.m_willBuyCount - buyRecord.m_boughtCount;
+                break;
             }
         }
-        return 0;
+
+        // 不可以超过库存
+        if (m_availCount < buyCount)
+        {
+            buyCount = m_availCount;
+        }
+
+        return buyCount;
     }
 
     // 增加购买数量
