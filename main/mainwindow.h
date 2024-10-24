@@ -6,6 +6,7 @@
 #include <QCloseEvent>
 #include <QStandardItemModel>
 #include "multichargecontroller.h"
+#include "chargesettingmanager.h"
 #include "settingmanager.h"
 #include "logincontroller.h"
 
@@ -36,6 +37,8 @@ private slots:
 
     void onDeletePhoneTableView(int row);
 
+    void onChargeSettingChange();
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
@@ -45,10 +48,17 @@ private:
     void initCtrls();
 
     // 可以调用多次
+    void initBuyCouponSetting();
+
+    // 可以调用多次
     void initPhoneTableView();
     void updatePhoneTableView(int row, const ChargePhone& chargePhone);
     void updatePhoneTableViewByMobile(QString mobile);
     void updatePhoneTableViewById(QString id);
+
+    bool reloadChargeSetting();
+
+    void runMultiChargeController();
 
 private:
     Ui::MainWindow *ui;
@@ -61,5 +71,8 @@ private:
     MultiChargeController* m_multiChargeController = nullptr;
 
     LoginController m_loginController;
+
+    // 标志是否需要重新加载充值配置
+    bool m_needReloadChargeSetting = false;
 };
 #endif // MAINWINDOW_H

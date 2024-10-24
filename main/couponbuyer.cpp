@@ -17,10 +17,10 @@ CouponBuyer::CouponBuyer(QObject *parent)
 
 void CouponBuyer::run()
 {
-    m_totalWillBuyMoney = SettingManager::getInstance()->getTotalChargeMoney();
+    m_totalWillBuyMoney = ChargeSettingManager::getInstance()->getTotalChargeMoney();
 
     m_couponBuyStatus.clear();
-    for (auto& buyCouponSetting : SettingManager::getInstance()->m_buyCouponSetting)
+    for (auto& buyCouponSetting : ChargeSettingManager::getInstance()->m_buyCouponSetting)
     {
         if (buyCouponSetting.m_willBuyCount > 0)
         {
@@ -38,9 +38,15 @@ void CouponBuyer::run()
 
 void CouponBuyer::onMainTimer()
 {
-    // 请求取消求购
     if (m_requestStop)
     {
+        // 如果还有卡券待查询，需要继续查询
+        if (needQueryCouponInfo())
+        {
+            doGetCouponInfo();
+            return;
+        }
+
         // 退出前需要取消求购
         bool send = false;
         for (auto& buyStatus : m_couponBuyStatus)
@@ -75,6 +81,7 @@ void CouponBuyer::onMainTimer()
         {
             emit runFinish();
         }
+
         return;
     }
 
@@ -210,26 +217,7 @@ void CouponBuyer::onMainTimer()
     }
 
     // 查询卡券信息
-    for (auto& buyStatus : m_couponBuyStatus)
-    {
-        for (auto& buyRecord : buyStatus.m_buyRecords)
-        {
-            if (!buyRecord.needQueryCouponInfo())
-            {
-                continue;
-            }
-
-            MfHttpClient* mfClient = new MfHttpClient(this);
-            CouponBuyStatus* buyStatusPtr = &buyStatus;
-            QString buyRecordId = buyRecord.m_buyRecordId;
-            connect(mfClient, &MfHttpClient::getCouponCompletely, [this, mfClient, buyStatusPtr, buyRecordId](bool success, QString errorMsg, QVector<GetCouponResult> result) {
-                onGetCouponCompletely(buyStatusPtr, buyRecordId, success, errorMsg, result);
-                mfClient->deleteLater();
-            });
-            mfClient->getCoupon(buyRecordId);
-            buyRecord.m_queryCouponInfo = true;
-        }
-    }
+    doGetCouponInfo();
 }
 
 void CouponBuyer::onBuyCoupon(CouponBuyStatus* buyStatus, QString recordId, int buyCount)
@@ -257,6 +245,46 @@ void CouponBuyer::onBuyCoupon(CouponBuyStatus* buyStatus, QString recordId, int 
                 }
                 break;
             }
+        }
+    }
+}
+
+bool CouponBuyer::needQueryCouponInfo()
+{
+    for (auto& buyStatus : m_couponBuyStatus)
+    {
+        for (auto& buyRecord : buyStatus.m_buyRecords)
+        {
+            if (buyRecord.m_orderIds.size() < buyRecord.m_boughtCount)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void CouponBuyer::doGetCouponInfo()
+{
+    for (auto& buyStatus : m_couponBuyStatus)
+    {
+        for (auto& buyRecord : buyStatus.m_buyRecords)
+        {
+            if (!buyRecord.needQueryCouponInfo())
+            {
+                continue;
+            }
+
+            MfHttpClient* mfClient = new MfHttpClient(this);
+            CouponBuyStatus* buyStatusPtr = &buyStatus;
+            QString buyRecordId = buyRecord.m_buyRecordId;
+            connect(mfClient, &MfHttpClient::getCouponCompletely, [this, mfClient, buyStatusPtr, buyRecordId](bool success, QString errorMsg, QVector<GetCouponResult> result) {
+                onGetCouponCompletely(buyStatusPtr, buyRecordId, success, errorMsg, result);
+                mfClient->deleteLater();
+            });
+            mfClient->getCoupon(buyRecordId);
+            buyRecord.m_queryCouponInfo = true;
         }
     }
 }

@@ -8,6 +8,7 @@
 #include <QDateTime>
 #include "orderstatusreporter.h"
 #include "Utility/LogUtil.h"
+#include "chargesettingmanager.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -23,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_ctrlDShortcut = new QShortcut(QKeySequence("Ctrl+D"), this);
     connect(m_ctrlDShortcut, &QShortcut::activated, this, &MainWindow::onCtrlDShortcut);
 
+    connect(ChargeSettingManager::getInstance(), &ChargeSettingManager::chargeSettingChange, this, &MainWindow::onChargeSettingChange);
     connect(&m_loginController, &LoginController::printLog, this, &MainWindow::onPrintLog);
     connect(OrderStatusReporter::getInstance(), &OrderStatusReporter::printLog, this, &MainWindow::onPrintLog);
 }
@@ -35,16 +37,7 @@ MainWindow::~MainWindow()
 void MainWindow::initCtrls()
 {
     // 初始化求购面额数量
-    QLineEdit* fvCountEdits[] = {ui->fv5CountEdit, ui->fv10CountEdit, ui->fv50CountEdit, ui->fv100CountEdit,
-                         ui->fv200CountEdit, ui->fv500CountEdit, ui->fv1000CountEdit};
-    QLineEdit* fvDisountEdits[] = {ui->fv5DiscountEdit, ui->fv10DiscountEdit, ui->fv50DiscountEdit, ui->fv100DiscountEdit,
-                         ui->fv200DiscountEdit, ui->fv500DiscountEdit, ui->fv1000DiscountEdit};
-    const QVector<BuyCouponSetting>& buyCouponSettings = SettingManager::getInstance()->m_buyCouponSetting;
-    for (int i=0; i<buyCouponSettings.size(); i++)
-    {
-        fvCountEdits[i]->setText(QString::number(buyCouponSettings[i].m_willBuyCount));
-        fvDisountEdits[i]->setText(QString::number(buyCouponSettings[i].m_discount));
-    }
+    initBuyCouponSetting();
 
     // 初始化充值手机列表
     initPhoneTableView();
@@ -74,6 +67,20 @@ void MainWindow::initCtrls()
     });
 }
 
+void MainWindow::initBuyCouponSetting()
+{
+    QLineEdit* fvCountEdits[] = {ui->fv5CountEdit, ui->fv10CountEdit, ui->fv50CountEdit, ui->fv100CountEdit,
+                         ui->fv200CountEdit, ui->fv500CountEdit, ui->fv1000CountEdit};
+    QLineEdit* fvDisountEdits[] = {ui->fv5DiscountEdit, ui->fv10DiscountEdit, ui->fv50DiscountEdit, ui->fv100DiscountEdit,
+                         ui->fv200DiscountEdit, ui->fv500DiscountEdit, ui->fv1000DiscountEdit};
+    const QVector<BuyCouponSetting>& buyCouponSettings = ChargeSettingManager::getInstance()->m_buyCouponSetting;
+    for (int i=0; i<buyCouponSettings.size(); i++)
+    {
+        fvCountEdits[i]->setText(QString::number(buyCouponSettings[i].m_willBuyCount));
+        fvDisountEdits[i]->setText(QString::number(buyCouponSettings[i].m_discount));
+    }
+}
+
 void MainWindow::initPhoneTableView()
 {
     ui->phoneTableView->installEventFilter(this);
@@ -87,7 +94,7 @@ void MainWindow::initPhoneTableView()
     m_phoneModel.setHeaderData(3, Qt::Horizontal, QString::fromWCharArray(L"已充金额"));
     m_phoneModel.setHeaderData(4, Qt::Horizontal, QString::fromWCharArray(L"备注"));
 
-    QVector<ChargePhone>& phones = SettingManager::getInstance()->m_chargePhones;
+    QVector<ChargePhone>& phones = ChargeSettingManager::getInstance()->m_chargePhones;
     for (int i=0; i<phones.size(); i++)
     {
         updatePhoneTableView(i, phones[i]);
@@ -121,7 +128,7 @@ void MainWindow::updatePhoneTableView(int row, const ChargePhone& chargePhone)
 void MainWindow::updatePhoneTableViewByMobile(QString mobile)
 {
     QString id;
-    for (const auto& chargePhone : SettingManager::getInstance()->m_chargePhones)
+    for (const auto& chargePhone : ChargeSettingManager::getInstance()->m_chargePhones)
     {
         if (chargePhone.m_phoneNumber == mobile)
         {
@@ -138,7 +145,7 @@ void MainWindow::updatePhoneTableViewByMobile(QString mobile)
 
 void MainWindow::updatePhoneTableViewById(QString id)
 {
-    QVector<ChargePhone>& phones = SettingManager::getInstance()->m_chargePhones;
+    QVector<ChargePhone>& phones = ChargeSettingManager::getInstance()->m_chargePhones;
     for (int i=0; i<phones.size(); i++)
     {
         if (id == phones[i].m_id)
@@ -155,6 +162,19 @@ void MainWindow::updatePhoneTableViewById(QString id)
             break;
         }
     }
+}
+
+bool MainWindow::reloadChargeSetting()
+{
+    m_needReloadChargeSetting = false;
+    if (!ChargeSettingManager::getInstance()->load())
+    {
+        return false;
+    }
+
+    initBuyCouponSetting();
+    initPhoneTableView();
+    return true;
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
@@ -289,15 +309,18 @@ void MainWindow::onStartBuyButtonClicked()
         return;
     }
 
-    SettingManager::getInstance()->m_buyCouponSetting = buyCouponSettings;
-    SettingManager::getInstance()->save();
-
-    if (SettingManager::getInstance()->getTotalChargeMoney() == 0)
+    ChargeSettingManager::getInstance()->m_buyCouponSetting = buyCouponSettings;
+    if (ChargeSettingManager::getInstance()->getTotalChargeMoney() == 0)
     {
         UiUtil::showTip(QString::fromWCharArray(L"请添加充值手机和充值金额"));
         return;
     }
 
+    runMultiChargeController();
+}
+
+void MainWindow::runMultiChargeController()
+{
     ui->startBuyButton->setEnabled(false);
     ui->cancelBuyButton->setEnabled(true);
     ui->addPhoneButton->setEnabled(false);
@@ -322,6 +345,17 @@ void MainWindow::onStartBuyButtonClicked()
         ui->addPhoneButton->setEnabled(true);
         m_multiChargeController->deleteLater();
         m_multiChargeController = nullptr;
+
+        // 配置变更，重新加载配置，自动继续求购
+        if (m_needReloadChargeSetting)
+        {
+            onPrintLog(QString::fromWCharArray(L"重新加载充值配置"));
+            if (reloadChargeSetting())
+            {
+                onPrintLog(QString::fromWCharArray(L"自动开始求购"));
+                runMultiChargeController();
+            }
+        }
     });
     m_multiChargeController->run();
 }
@@ -344,7 +378,7 @@ void MainWindow::onAddPhoneButtonClicked()
         return;
     }
 
-    SettingManager::getInstance()->updateChargePhone(dlg.getChargePhone());
+    ChargeSettingManager::getInstance()->updateChargePhone(dlg.getChargePhone());
     initPhoneTableView();
 }
 
@@ -352,7 +386,7 @@ void MainWindow::onEditPhoneTableView(int row)
 {
     QString id = m_phoneModel.data(m_phoneModel.index(row, 0), Qt::UserRole).toString();
     ChargePhone chargePhone;
-    for (auto& phone : SettingManager::getInstance()->m_chargePhones)
+    for (auto& phone : ChargeSettingManager::getInstance()->m_chargePhones)
     {
         if (phone.m_id == id)
         {
@@ -373,13 +407,29 @@ void MainWindow::onEditPhoneTableView(int row)
         return;
     }
 
-    SettingManager::getInstance()->updateChargePhone(dlg.getChargePhone());
+    ChargeSettingManager::getInstance()->updateChargePhone(dlg.getChargePhone());
     updatePhoneTableViewById(chargePhone.m_id);
 }
 
 void MainWindow::onDeletePhoneTableView(int row)
 {
     QString id = m_phoneModel.data(m_phoneModel.index(row, 0), Qt::UserRole).toString();
-    SettingManager::getInstance()->deleteChargePhone(id);
+    ChargeSettingManager::getInstance()->deleteChargePhone(id);
     initPhoneTableView();
+}
+
+void MainWindow::onChargeSettingChange()
+{
+    onPrintLog(QString::fromWCharArray(L"检测到充值配置发生变化"));
+
+    // 正在求购，等结束后再加载配置
+    if (m_multiChargeController)
+    {
+        m_needReloadChargeSetting = true;
+        m_multiChargeController->requestStop();
+    }
+    else
+    {
+        reloadChargeSetting();
+    }
 }

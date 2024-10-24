@@ -8,6 +8,7 @@
 #include "datamodel.h"
 #include "mfhttpclient.h"
 #include "settingmanager.h"
+#include "chargesettingmanager.h"
 
 // 购买记录
 class BuyRecord
@@ -165,6 +166,11 @@ private slots:
 
     // 查询卡券返回
     void onGetCouponCompletely(CouponBuyStatus* buyStatus, QString buyRecordId, bool success, QString errorMsg, QVector<GetCouponResult> result);
+
+private:
+    bool needQueryCouponInfo();
+
+    void doGetCouponInfo();
 
 private:
     QTimer* m_mainTimer = nullptr;

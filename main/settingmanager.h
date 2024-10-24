@@ -4,42 +4,6 @@
 #include <QVector>
 #include "datamodel.h"
 
-// 充值手机
-class ChargePhone
-{
-public:
-    // id
-    QString m_id;
-
-    // 手机号
-    QString m_phoneNumber;
-
-    // 要充的总金额
-    int m_moneyCount = 0;
-
-    // 已充金额
-    int m_chargeMoney = 0;
-
-    // 优先级
-    int m_priority = 1;
-
-    // 备注
-    QString m_remark;
-};
-
-class BuyCouponSetting
-{
-public:
-    // 面额
-    int m_faceVal = 0;
-
-    // 要购买的数量
-    int m_willBuyCount = 0;
-
-    // 折扣
-    int m_discount = 950;
-};
-
 class YqbSetting
 {
 public:
@@ -97,14 +61,7 @@ protected:
 public:
     static SettingManager* getInstance();
 
-    void save();
-
-    void updateChargePhone(const ChargePhone& chargePhone);
-
-    void deleteChargePhone(QString id);
-
-    // 获取所有手机充值金额总和
-    int getTotalChargeMoney();
+    void save();    
 
 private:
     void load();
@@ -113,13 +70,7 @@ public:
     int m_nLogLevel = 2;  // info
 
     // 壹钱包设置
-    YqbSetting m_yqbSetting;
-
-    // 求购设置
-    QVector<BuyCouponSetting> m_buyCouponSetting;
-
-    // 充值手机列表
-    QVector<ChargePhone> m_chargePhones;
+    YqbSetting m_yqbSetting;    
 
     // 导入的卡券列表
     QVector<Coupon> m_coupons;

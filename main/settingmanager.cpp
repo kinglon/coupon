@@ -55,38 +55,7 @@ void SettingManager::load()
         m_yqbSetting.m_mobileNumber = yqb["mobile_number"].toString();
         m_yqbSetting.m_couponId = yqb["coupon_id"].toString();
         m_yqbSetting.m_couponPassword = yqb["coupon_password"].toString();
-    }
-
-    if (root.contains("buy_coupon"))
-    {
-        QJsonArray buyCouponSettings = root["buy_coupon"].toArray();
-        for (auto item : buyCouponSettings)
-        {
-            QJsonObject buyCouponSettingJson = item.toObject();
-            BuyCouponSetting buyCouponSetting;
-            buyCouponSetting.m_faceVal = buyCouponSettingJson["face_val"].toInt();
-            buyCouponSetting.m_willBuyCount = buyCouponSettingJson["will_buy_count"].toInt();
-            buyCouponSetting.m_discount = buyCouponSettingJson["discount"].toInt();
-            m_buyCouponSetting.append(buyCouponSetting);
-        }
-    }
-
-    if (root.contains("charge_phone"))
-    {
-        QJsonArray chargePhones = root["charge_phone"].toArray();
-        for (auto item : chargePhones)
-        {
-            QJsonObject chargePhoneJson = item.toObject();
-            ChargePhone chargePhone;
-            chargePhone.m_id = chargePhoneJson["id"].toString();
-            chargePhone.m_moneyCount = chargePhoneJson["money"].toInt();
-            chargePhone.m_chargeMoney = chargePhoneJson["charge_money"].toInt();
-            chargePhone.m_phoneNumber = chargePhoneJson["phone_number"].toString();
-            chargePhone.m_priority = chargePhoneJson["priority"].toInt();
-            chargePhone.m_remark = chargePhoneJson["remark"].toInt();
-            m_chargePhones.append(chargePhone);
-        }
-    }
+    }        
 
     if (root.contains("coupon"))
     {
@@ -121,32 +90,7 @@ void SettingManager::save()
     yqb["mobile_number"] = m_yqbSetting.m_mobileNumber;
     yqb["coupon_id"] = m_yqbSetting.m_couponId;
     yqb["coupon_password"] = m_yqbSetting.m_couponPassword;
-    root["yqb"] = yqb;
-
-    QJsonArray buyCouponArray;
-    for (const auto& setting : m_buyCouponSetting)
-    {
-        QJsonObject buyCouponObject;
-        buyCouponObject["face_val"] = setting.m_faceVal;
-        buyCouponObject["will_buy_count"] = setting.m_willBuyCount;
-        buyCouponObject["discount"] = setting.m_discount;
-        buyCouponArray.append(buyCouponObject);
-    }
-    root["buy_coupon"] = buyCouponArray;
-
-    QJsonArray chargePhoneArray;
-    for (const auto& chargePhone : m_chargePhones)
-    {
-        QJsonObject chargePhoneObject;
-        chargePhoneObject["id"] = chargePhone.m_id;
-        chargePhoneObject["money"] = chargePhone.m_moneyCount;
-        chargePhoneObject["charge_money"] = chargePhone.m_chargeMoney;
-        chargePhoneObject["phone_number"] = chargePhone.m_phoneNumber;
-        chargePhoneObject["priority"] = chargePhone.m_priority;
-        chargePhoneObject["remark"] = chargePhone.m_remark;
-        chargePhoneArray.append(chargePhoneObject);
-    }
-    root["charge_phone"] = chargePhoneArray;
+    root["yqb"] = yqb;    
 
     QJsonArray couponArray;
     for (const auto& coupon : m_coupons)
@@ -175,47 +119,4 @@ void SettingManager::save()
     }
     file.write(jsonData);
     file.close();
-}
-
-void SettingManager::updateChargePhone(const ChargePhone& chargePhone)
-{
-    for (auto& phone : m_chargePhones)
-    {
-        if (phone.m_id == chargePhone.m_id)
-        {
-            phone = chargePhone;
-            save();
-            return;
-        }
-    }
-
-    m_chargePhones.append(chargePhone);
-    save();
-}
-
-void SettingManager::deleteChargePhone(QString id)
-{
-    for (int i=0; i<m_chargePhones.size(); i++)
-    {
-        if (m_chargePhones[i].m_id == id)
-        {
-            m_chargePhones.remove(i);
-            break;
-        }
-    }
-    save();
-}
-
-int SettingManager::getTotalChargeMoney()
-{
-    int total = 0;
-    for (int i=0; i<m_chargePhones.size(); i++)
-    {
-        int needChargeMoney = m_chargePhones[i].m_moneyCount - m_chargePhones[i].m_chargeMoney;
-        if (needChargeMoney > 0)
-        {
-            total += needChargeMoney;
-        }
-    }
-    return total;
 }

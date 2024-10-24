@@ -5,6 +5,7 @@
 #include "couponbuyer.h"
 #include "singlechargecontroller.h"
 #include "orderstatusreporter.h"
+#include "chargesettingmanager.h"
 
 // 自动求购充值
 class MultiChargeController : public QObject
@@ -39,6 +40,9 @@ private:
 
     // 购买卡券列表
     QVector<GetCouponResult> m_coupons;
+
+    // 标志是否已经请求停止
+    bool m_requestStop = false;
 };
 
 #endif // MULTICHARGECONTROLLER_H

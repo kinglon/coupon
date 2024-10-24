@@ -17,6 +17,7 @@ SOURCES += \
     Utility/LogUtil.cpp \
     chargedialog.cpp \
     chargephonedialog.cpp \
+    chargesettingmanager.cpp \
     couponbuyer.cpp \
     couponquerier.cpp \
     datamodel.cpp \
@@ -43,6 +44,7 @@ HEADERS += \
     Utility/LogUtil.h \
     chargedialog.h \
     chargephonedialog.h \
+    chargesettingmanager.h \
     couponbuyer.h \
     couponquerier.h \
     datamodel.h \

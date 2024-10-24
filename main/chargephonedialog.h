@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include "settingmanager.h"
+#include "chargesettingmanager.h"
 
 namespace Ui {
 class ChargePhoneDialog;

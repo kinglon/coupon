@@ -19,7 +19,6 @@ void MultiChargeController::run()
     connect(m_couponBuyer, &CouponBuyer::runFinish, [this]() {
         m_couponBuyer->deleteLater();
         m_couponBuyer = nullptr;
-        requestStop();
     });
     m_couponBuyer->run();
 }
@@ -37,7 +36,7 @@ void MultiChargeController::doCharge()
     }
 
     // 充值手机按优先级排序
-    QVector<ChargePhone> chargePhones = SettingManager::getInstance()->m_chargePhones;
+    QVector<ChargePhone> chargePhones = ChargeSettingManager::getInstance()->m_chargePhones;
     std::sort(chargePhones.begin(), chargePhones.end(), [](ChargePhone& a, ChargePhone& b) {
         return a.m_priority < b.m_priority;
     });
@@ -90,7 +89,7 @@ void MultiChargeController::doCharge(QString mobile, int chargeMoney, const QVec
         }
 
         // 更新手机已充金额
-        for (auto& chargePhone : SettingManager::getInstance()->m_chargePhones)
+        for (auto& chargePhone : ChargeSettingManager::getInstance()->m_chargePhones)
         {
             if (chargePhone.m_phoneNumber == mobile)
             {
@@ -111,10 +110,6 @@ void MultiChargeController::doCharge(QString mobile, int chargeMoney, const QVec
         {
             doCharge();
         }
-        else
-        {
-            requestStop();
-        }
     });
     m_chargeController->run(mobile, chargeMoney, coupons);
 }
@@ -122,7 +117,7 @@ void MultiChargeController::doCharge(QString mobile, int chargeMoney, const QVec
 bool MultiChargeController::isNeedCharge()
 {
     bool needCharge = false;
-    for (auto& chargePhone : SettingManager::getInstance()->m_chargePhones)
+    for (auto& chargePhone : ChargeSettingManager::getInstance()->m_chargePhones)
     {
         if (chargePhone.m_moneyCount > chargePhone.m_chargeMoney)
         {
@@ -135,14 +130,26 @@ bool MultiChargeController::isNeedCharge()
 
 void MultiChargeController::requestStop()
 {
-    if (m_couponBuyer == nullptr && m_chargeController == nullptr)
+    if (m_requestStop)
     {
-        emit runFinish(!isNeedCharge());
         return;
     }
+    m_requestStop = true;
 
     if (m_couponBuyer)
     {
         m_couponBuyer->requestStop();
     }
+
+    // 定时检测能否退出
+    QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, [this, timer]() {
+        if (m_couponBuyer == nullptr && m_chargeController == nullptr && m_coupons.size() == 0)
+        {
+            timer->stop();
+            timer->deleteLater();
+            emit runFinish(!isNeedCharge());
+        }
+    });
+    timer->start(1000);
 }
