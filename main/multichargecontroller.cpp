@@ -97,14 +97,14 @@ void MultiChargeController::doCharge(QString mobile, int chargeMoney, const QVec
                 break;
             }
         }
-        emit chargeChange(mobile);
-
-        // 可能有新的卡券到来，继续充值
-        doCharge();
+        emit chargeChange(mobile);        
     });
     connect(m_chargeController, &SingleChargeController::runFinish, [this](bool) {        
         m_chargeController->deleteLater();
-        m_chargeController = nullptr;       
+        m_chargeController = nullptr;
+
+        // 导出充值状态
+        ChargeSettingManager::getInstance()->exportChargeResult();
 
         if (isNeedCharge())
         {

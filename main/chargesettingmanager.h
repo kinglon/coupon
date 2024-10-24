@@ -50,6 +50,9 @@ public:
 
     bool load();
 
+    // 导出充值结果
+    bool exportChargeResult();
+
     void updateChargePhone(const ChargePhone& chargePhone);
 
     void deleteChargePhone(QString id);

@@ -74,7 +74,8 @@ void MainWindow::initBuyCouponSetting()
     QLineEdit* fvDisountEdits[] = {ui->fv5DiscountEdit, ui->fv10DiscountEdit, ui->fv50DiscountEdit, ui->fv100DiscountEdit,
                          ui->fv200DiscountEdit, ui->fv500DiscountEdit, ui->fv1000DiscountEdit};
     const QVector<BuyCouponSetting>& buyCouponSettings = ChargeSettingManager::getInstance()->m_buyCouponSetting;
-    for (int i=0; i<buyCouponSettings.size(); i++)
+    int ctrlSize = sizeof(fvCountEdits) / sizeof(fvCountEdits[0]);
+    for (int i=0; i<buyCouponSettings.size() && i<ctrlSize; i++)
     {
         fvCountEdits[i]->setText(QString::number(buyCouponSettings[i].m_willBuyCount));
         fvDisountEdits[i]->setText(QString::number(buyCouponSettings[i].m_discount));

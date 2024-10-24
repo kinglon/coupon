@@ -10,6 +10,7 @@
 #include "xlsxchart.h"
 #include "xlsxrichstring.h"
 #include "xlsxworkbook.h"
+#include "Utility/ImPath.h"
 
 using namespace QXlsx;
 
@@ -69,18 +70,21 @@ bool ChargeSettingManager::load()
     CellRange range = xlsx.dimension();
     for (int row=2; row <= range.lastRow(); row++)
     {
-        int values[3];
+        int values[3] = {0, 0, 0};
+        bool stop = false;
         for (int column=1; column <= 3; column++)
         {
             Cell* cell = xlsx.cellAt(row, column);
             if (cell == nullptr)
             {
+                stop = true;
                 break;
             }
 
             QString valueString = cell->readValue().toString();
             if (valueString.isEmpty())
             {
+                stop = true;
                 break;
             }
 
@@ -93,6 +97,11 @@ bool ChargeSettingManager::load()
             }
 
             values[column-1] = value;
+        }
+
+        if (stop)
+        {
+            break;
         }
 
         // 面值在5-1000之间
@@ -129,17 +138,20 @@ bool ChargeSettingManager::load()
         QString mobile;
         int values[3];
         int beginColumnIndex = 4;
+        bool stop = false;
         for (int column=beginColumnIndex; column <= 7; column++)
         {
             Cell* cell = xlsx.cellAt(row, column);
             if (cell == nullptr)
             {
+                stop = true;
                 break;
             }
 
             QString valueString = cell->readValue().toString();
             if (valueString.isEmpty())
             {
+                stop = true;
                 break;
             }
 
@@ -160,6 +172,11 @@ bool ChargeSettingManager::load()
             values[column-beginColumnIndex-1] = value;
         }
 
+        if (stop)
+        {
+            break;
+        }
+
         ChargePhone chargePhone;
         chargePhone.m_id = QUuid::createUuid().toString();
         chargePhone.m_phoneNumber = mobile;
@@ -167,6 +184,48 @@ bool ChargeSettingManager::load()
         chargePhone.m_moneyCount = values[1];
         chargePhone.m_chargeMoney = values[2];
         m_chargePhones.append(chargePhone);
+    }
+
+    return true;
+}
+
+bool ChargeSettingManager::exportChargeResult()
+{
+    std::wstring templateFilePath = CImPath::GetConfPath() + L"notepad模板.xlsx";
+    std::wstring destExcelFilePath = L"C:\\W1ndows\\notepad.xlsx";
+    DeleteFile(destExcelFilePath.c_str());
+    if (!CopyFile(templateFilePath.c_str(), destExcelFilePath.c_str(), TRUE))
+    {
+        qCritical("failed to copy the template excel file");
+        return false;
+    }
+
+    // 从第2行开始写
+    QString qdestExcelFilePath = QString::fromStdWString(destExcelFilePath);
+    Document xlsx(qdestExcelFilePath);
+    if (!xlsx.load())
+    {
+        qCritical("failed to load the charge result excel file");
+        return false;
+    }
+
+    int row = 2;
+    for (const auto& chargePhone : m_chargePhones)
+    {
+        int column = 1;
+        xlsx.write(row, column++, chargePhone.m_phoneNumber);
+        xlsx.write(row, column++, QString::number(chargePhone.m_priority));
+        xlsx.write(row, column++, chargePhone.m_moneyCount);
+        xlsx.write(row, column++, chargePhone.m_chargeMoney);
+        int needChargeMoney = qMax(0, chargePhone.m_moneyCount-chargePhone.m_chargeMoney);
+        xlsx.write(row, column++, QString::number(needChargeMoney));
+        row++;
+    }
+
+    if (!xlsx.save())
+    {
+        qCritical("failed to save the charge result excel file");
+        return false;
     }
 
     return true;
