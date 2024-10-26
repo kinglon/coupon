@@ -172,6 +172,9 @@ private:
 
     void doGetCouponInfo();
 
+    // 获取指定面额需要的购买数量
+    int getNeedBuyCount(int faceValue);
+
 private:
     QTimer* m_mainTimer = nullptr;
 
@@ -184,12 +187,6 @@ private:
 
     // 上一次获取库存的时间
     qint64 m_lastGetFaceValStockTime = 0;
-
-    // 总共要购买金额
-    int m_totalWillBuyMoney = 0;
-
-    // 当前已购买金额
-    int m_totalBoughtMoney = 0;
 };
 
 #endif // COUPONBUYER_H

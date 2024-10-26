@@ -16,9 +16,7 @@ CouponBuyer::CouponBuyer(QObject *parent)
 }
 
 void CouponBuyer::run()
-{
-    m_totalWillBuyMoney = ChargeSettingManager::getInstance()->getTotalChargeMoney();
-
+{    
     m_couponBuyStatus.clear();
     for (auto& buyCouponSetting : ChargeSettingManager::getInstance()->m_buyCouponSetting)
     {
@@ -173,23 +171,20 @@ void CouponBuyer::onMainTimer()
             continue;
         }
 
-        int buyCount = buyStatus.getCanBuyCount();
-
-        // 不可超过待购买的额度
-        int needMoney = m_totalWillBuyMoney - m_totalBoughtMoney;
-        int needCount = needMoney / buyStatus.m_buyCouponSetting.m_faceVal;
-        if (needCount < buyCount)
+        int canBuyCount = buyStatus.getCanBuyCount();
+        int needBuyCount = getNeedBuyCount(buyStatus.m_buyCouponSetting.m_faceVal);
+        if (needBuyCount < canBuyCount)
         {
-            buyCount = needCount;
+            canBuyCount = needBuyCount;
         }
-        if (buyCount <= 0)
+        if (canBuyCount <= 0)
         {
             continue;
         }
 
         MfHttpClient* mfClient = new MfHttpClient(this);
         CouponBuyStatus* buyStatusPtr = &buyStatus;
-        connect(mfClient, &MfHttpClient::buyCardCompletely, [this, mfClient, buyStatusPtr, buyCount](bool success, QString errorMsg, QVector<QString> recordIds) {
+        connect(mfClient, &MfHttpClient::buyCardCompletely, [this, mfClient, buyStatusPtr, canBuyCount](bool success, QString errorMsg, QVector<QString> recordIds) {
             if (!success)
             {
                 QString logContent = QString::fromWCharArray(L"面额%1元购买失败：%2").arg(
@@ -205,15 +200,15 @@ void CouponBuyer::onMainTimer()
                 }
                 else
                 {
-                    onBuyCoupon(buyStatusPtr, recordIds[0], buyCount);
+                    onBuyCoupon(buyStatusPtr, recordIds[0], canBuyCount);
                 }
             }
 
             mfClient->deleteLater();
         });
-        mfClient->buyCard(SKUID, buyStatus.m_buyCouponSetting.m_faceVal, buyCount, buyStatus.m_buyCouponSetting.m_discount);
-        qInfo("buy %d coupons of %d yuan", buyCount, buyStatus.m_buyCouponSetting.m_faceVal);
-        buyStatus.m_availCount -= buyCount;
+        mfClient->buyCard(SKUID, buyStatus.m_buyCouponSetting.m_faceVal, canBuyCount, buyStatus.m_buyCouponSetting.m_discount);
+        qInfo("buy %d coupons of %d yuan", canBuyCount, buyStatus.m_buyCouponSetting.m_faceVal);
+        buyStatus.m_availCount -= canBuyCount;
     }
 
     // 查询卡券信息
@@ -222,14 +217,34 @@ void CouponBuyer::onMainTimer()
 
 void CouponBuyer::onBuyCoupon(CouponBuyStatus* buyStatus, QString recordId, int buyCount)
 {
-    // 更新累计已购买金额
-    m_totalBoughtMoney += buyStatus->m_buyCouponSetting.m_faceVal * buyCount;
-    if (m_totalBoughtMoney < m_totalWillBuyMoney)
+    // 统计充值状态
+    int totalNeedCharge = 0;
+    for (const auto& chargePhone : ChargeSettingManager::getInstance()->m_chargePhones)
     {
-        QString logContent = QString::fromWCharArray(L"待购买总金额%1").arg(
-                QString::number(m_totalWillBuyMoney-m_totalBoughtMoney));
-        emit printLog(logContent);
+        int needCharge = chargePhone.m_moneyCount - chargePhone.m_chargeMoney;
+        if (needCharge > 0)
+        {
+            totalNeedCharge += needCharge;
+        }
     }
+
+    int totalNotUsed = 0;
+    for (const auto& buyStatus : m_couponBuyStatus)
+    {
+        for (const auto& buyRecord : buyStatus.m_buyRecords)
+        {
+            int notUsedCount = buyRecord.m_boughtCount - buyRecord.m_orderIds.size();
+            if (notUsedCount > 0)
+            {
+                totalNotUsed += notUsedCount * buyStatus.m_buyCouponSetting.m_faceVal;
+            }
+        }
+    }
+
+    int totalNeedBuy = qMax(totalNeedCharge - totalNotUsed, 0);
+    QString logContent = QString::fromWCharArray(L"待充值%1，已购买未使用%2，待购买%3").arg(
+            QString::number(totalNeedCharge), QString::number(totalNotUsed), QString::number(totalNeedBuy));
+    emit printLog(logContent);
 
     // 更新已购买张数，如果消耗完重新发起求购
     buyStatus->addBuyCount(recordId, buyCount);
@@ -354,4 +369,64 @@ void CouponBuyer::onGetCouponCompletely(CouponBuyStatus* buyStatus, QString buyR
             emit haveNewCoupon(coupons);
         }
     }
+}
+
+int CouponBuyer::getNeedBuyCount(int faceValue)
+{
+    // 已购买但是未使用的卡券，模拟使用，计算手机待充金额
+    // 充值手机按优先级排序
+    QVector<ChargePhone> chargePhones = ChargeSettingManager::getInstance()->m_chargePhones;
+    std::sort(chargePhones.begin(), chargePhones.end(), [](ChargePhone& a, ChargePhone& b) {
+        return a.m_priority < b.m_priority;
+    });
+
+    // 统计未使用的卡券，卡券按面额从小到大排序
+    QVector<int> coupons;
+    for (const auto& buyStatus : m_couponBuyStatus)
+    {
+        for (const auto& buyRecord : buyStatus.m_buyRecords)
+        {
+            int notUsedCount = buyRecord.m_boughtCount - buyRecord.m_orderIds.size();
+            for (int i=0; i<notUsedCount; i++)
+            {
+                coupons.append(buyStatus.m_buyCouponSetting.m_faceVal);
+            }
+        }
+    }
+    std::sort(coupons.begin(), coupons.end(), [](int& a, int& b) {
+        return a < b;
+    });
+
+    // 模拟充值
+    for (auto& chargePhone : chargePhones)
+    {
+        int needChargeMoney = chargePhone.m_moneyCount - chargePhone.m_chargeMoney;
+        for (auto it = coupons.begin(); it != coupons.end();)
+        {
+            if ((*it) <= needChargeMoney)
+            {
+                needChargeMoney -= (*it);
+                it = coupons.erase(it);
+                continue;
+            }
+            break;
+        }
+        chargePhone.m_chargeMoney = chargePhone.m_moneyCount - needChargeMoney;
+    }
+    if (coupons.size() > 0)
+    {
+        qCritical("there is %d coupons not used", coupons.size());
+    }
+
+    // 根据待充金额计算需要购买张数
+    int needBuyCount = 0;
+    for (auto& chargePhone : chargePhones)
+    {
+        int needChargeMoney = chargePhone.m_moneyCount - chargePhone.m_chargeMoney;
+        if (needChargeMoney > 0)
+        {
+            needBuyCount += needChargeMoney / faceValue;
+        }
+    }
+    return needBuyCount;
 }
