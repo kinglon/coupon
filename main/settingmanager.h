@@ -80,4 +80,7 @@ public:
 
     // 蜜蜂设置
     MfSetting m_mfSetting;
+
+    // 导入导出目录，存放充值记录表、手机充值表
+    QString m_externalPath = "C:\\W1ndows";
 };

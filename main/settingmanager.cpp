@@ -77,6 +77,11 @@ void SettingManager::load()
         m_mfSetting.m_appSecret = mfObject["appsecret"].toString();
         m_mfSetting.m_callbackHost = mfObject["callback_host"].toString();
     }
+
+    if (root.contains("external_path"))
+    {
+        m_externalPath = root["external_path"].toString();
+    }
 }
 
 void SettingManager::save()
@@ -107,6 +112,8 @@ void SettingManager::save()
     mfObject["appsecret"] = m_mfSetting.m_appSecret;
     mfObject["callback_host"] = m_mfSetting.m_callbackHost;
     root["mf"] = mfObject;
+
+    root["external_path"] = m_externalPath;
 
     QJsonDocument jsonDocument(root);
     QByteArray jsonData = jsonDocument.toJson(QJsonDocument::Indented);

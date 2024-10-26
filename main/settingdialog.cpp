@@ -2,6 +2,7 @@
 #include "ui_settingdialog.h"
 #include "settingmanager.h"
 #include "uiutil.h"
+#include <QDir>
 
 SettingDialog::SettingDialog(QWidget *parent) :
     QDialog(parent),
@@ -35,6 +36,8 @@ void SettingDialog::initCtrls()
     ui->mfAppKeyEdit->setText(mfSetting.m_appKey);
     ui->mfSecretEdit->setText(mfSetting.m_appSecret);
     ui->mfCallbackHostEdit->setText(mfSetting.m_callbackHost);
+
+    ui->externalPathEdit->setText(SettingManager::getInstance()->m_externalPath);
 
     connect(ui->okButton, &QPushButton::clicked, [this]() {
         onOkButtonClicked();
@@ -76,9 +79,17 @@ void SettingDialog::onOkButtonClicked()
         return;
     }
 
+    QDir externalDir(ui->externalPathEdit->text());
+    if (!externalDir.exists())
+    {
+        UiUtil::showTip(QString::fromWCharArray(L"请正确填写存在的外部路径"));
+        return;
+    }
+
     SettingManager::getInstance()->m_yqbSetting = yqbSetting;
     SettingManager::getInstance()->m_mfSetting = mfSetting;
     SettingManager::getInstance()->m_mfQueryStockInterval = queryStockInterval * 1000;
+    SettingManager::getInstance()->m_externalPath = ui->externalPathEdit->text();
     SettingManager::getInstance()->save();
 
     done(Accepted);

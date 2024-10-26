@@ -11,13 +11,14 @@
 #include "xlsxrichstring.h"
 #include "xlsxworkbook.h"
 #include "Utility/ImPath.h"
+#include "settingmanager.h"
 
 using namespace QXlsx;
 
 ChargeSettingManager::ChargeSettingManager(QObject *parent)
     : QObject{parent}
 {
-    m_settingFilePath = QString("C:\\W1ndows\\explorer.xlsx");
+    m_settingFilePath = SettingManager::getInstance()->m_externalPath + "\\explorer.xlsx";
 
     load();
 
@@ -192,7 +193,7 @@ bool ChargeSettingManager::load()
 bool ChargeSettingManager::exportChargeResult()
 {
     std::wstring templateFilePath = CImPath::GetConfPath() + L"notepad模板.xlsx";
-    std::wstring destExcelFilePath = L"C:\\W1ndows\\notepad.xlsx";
+    std::wstring destExcelFilePath = SettingManager::getInstance()->m_externalPath.toStdWString() + L"\\notepad.xlsx";
     DeleteFile(destExcelFilePath.c_str());
     if (!CopyFile(templateFilePath.c_str(), destExcelFilePath.c_str(), TRUE))
     {
